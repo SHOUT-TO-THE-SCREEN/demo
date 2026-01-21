@@ -1,0 +1,78 @@
+.opCreatorOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  pointer-events: auto;
+}
+
+
+.opCreatorPanel {
+  position: fixed;
+    pointer-events: auto;
+  width: 320px;
+  border-radius: 12px;
+  background: rgba(20, 20, 24, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+.opCreatorHeader {
+  padding: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.opCreatorInput {
+  width: 100%;
+  padding: 10px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+  outline: none;
+}
+
+.opCreatorList {
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.opCreatorEmpty {
+  padding: 12px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.opCreatorItem {
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #fff;
+  user-select: none;
+}
+
+.opCreatorItem.active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.opCreatorItemMain {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.opCreatorItemLabel {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.opCreatorItemSub {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.opCreatorItemGroup {
+  font-size: 12px;
+  opacity: 0.75;
+  align-self: center;
+}

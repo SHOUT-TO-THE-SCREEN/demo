@@ -1,0 +1,335 @@
+.introCine{
+  position: relative;
+  min-height: 100vh;
+  background: #f7f7f8; /* 밝게 */
+  color: rgba(10,10,10,0.92);
+  overflow-x: hidden;
+}
+
+/* WebGL background */
+.introCine__bg{
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  filter: saturate(0.95) contrast(0.95);
+}
+
+/* film overlay */
+.introCine__film{
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.filmVignette{
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 62%, rgba(0,0,0,0.10) 100%);
+}
+
+.filmGrain{
+  position: absolute;
+  inset: 0;
+  opacity: 0.07;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+}
+
+.introCine__content{
+  position: relative;
+  z-index: 2;
+}
+
+/* layout */
+.container{
+  width: min(1100px, 92vw);
+  margin: 0 auto;
+}
+
+.cineSection{
+  min-height: 100vh;
+  display: grid;
+  align-content: center;
+  padding: 92px 0;
+}
+
+.grid2{
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 28px;
+  align-items: start;
+}
+
+.h2{
+  font-size: 32px;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.body{
+  font-size: 16px;
+  line-height: 1.8;
+  color: rgba(10,10,10,0.80);
+}
+
+.bullets{
+  margin: 14px 0 0 0;
+  padding-left: 18px;
+}
+
+.bullets li{
+  margin: 6px 0;
+}
+
+/* hero */
+.hero{
+  padding-top: 120px;
+}
+
+.hero__eyebrow{
+  letter-spacing: 0.22em;
+  font-size: 12px;
+  color: rgba(10,10,10,0.55);
+  margin-bottom: 16px;
+}
+
+.hero__title{
+  font-size: 64px;
+  line-height: 1.02;
+  margin: 0 0 16px 0;
+}
+
+.hero__lead{
+  font-size: 18px;
+  line-height: 1.7;
+  margin: 0 0 26px 0;
+  color: rgba(10,10,10,0.78);
+  max-width: 720px;
+}
+
+.hero__cta{
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.hero__meta{
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: rgba(10,10,10,0.55);
+}
+
+/* buttons */
+.btnPrimary{
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(10,10,10,0.14);
+  background: rgba(10,10,10,0.92);
+  color: rgba(255,255,255,0.95);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btnGhost{
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(10,10,10,0.14);
+  background: rgba(255,255,255,0.40);
+  color: rgba(10,10,10,0.90);
+  cursor: pointer;
+  font-size: 14px;
+  backdrop-filter: blur(10px);
+}
+
+/* steps */
+.steps{
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.stepCard{
+  border-radius: 18px;
+  border: 1px solid rgba(10,10,10,0.12);
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(10px);
+  padding: 16px 16px;
+}
+
+.stepNum{
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  color: rgba(10,10,10,0.55);
+}
+
+.stepTitle{
+  margin-top: 8px;
+  font-size: 18px;
+}
+
+.stepDesc{
+  margin-top: 6px;
+  font-size: 13px;
+  color: rgba(10,10,10,0.70);
+  line-height: 1.6;
+}
+
+/* use case cards */
+.cards{
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.miniCard{
+  border-radius: 18px;
+  border: 1px solid rgba(10,10,10,0.12);
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(10px);
+  padding: 16px 16px;
+}
+
+.miniTitle{
+  font-size: 16px;
+  margin-bottom: 6px;
+}
+
+.miniDesc{
+  font-size: 13px;
+  color: rgba(10,10,10,0.70);
+  line-height: 1.6;
+}
+
+/* quote */
+.quoteBox{
+  border-radius: 22px;
+  border: 1px solid rgba(10,10,10,0.12);
+  background: rgba(255,255,255,0.60);
+  backdrop-filter: blur(12px);
+  padding: 28px 22px;
+  text-align: center;
+}
+
+.quoteMark{
+  font-size: 40px;
+  opacity: 0.6;
+}
+
+.quoteText{
+  font-size: 26px;
+  line-height: 1.4;
+  margin: 10px 0 6px 0;
+}
+
+.quoteSub{
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  color: rgba(10,10,10,0.55);
+}
+
+.quoteCta{
+  margin-top: 18px;
+}
+
+/* footer */
+.cineFooter{
+  padding: 48px 0 58px 0;
+}
+
+.footerRow{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: rgba(10,10,10,0.55);
+  font-size: 12px;
+}
+
+/* responsive */
+@media (max-width: 900px){
+  .grid2{ grid-template-columns: 1fr; }
+  .steps{ grid-template-columns: 1fr; }
+  .cards{ grid-template-columns: 1fr; }
+  .hero__title{ font-size: 44px; }
+}
+
+/* =========================
+   A + B : white background visibility boost
+   - A: dot style (colored glow + ring)
+   - B: subtle dark tint behind dots
+   (✅ 로고/기존 반딧불이 관련 클래스는 전부 제거함)
+========================= */
+.firefliesLayer{
+  position: fixed;
+  inset: 0;
+  z-index: 1;            /* WebGL 위(0), content 아래(2) */
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.firefliesLayer::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  /* ✅ 확실히 보이게: 틴트 강도 업 + 아주 약한 비네팅 */
+  background:
+    radial-gradient(ellipse at center, rgba(0,0,0,0.00) 55%, rgba(0,0,0,0.07) 100%),
+    rgba(0,0,0,0.06);
+  pointer-events:none;
+}
+
+.fireflyDot{
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 999px;
+
+  /* ✅ 중심 코어(살짝 어두운 점) + 컬러 헤일로(청록/민트) */
+  background:
+    radial-gradient(circle,
+      rgba(20,20,20,0.40) 0%,
+      rgba(255,255,255,0.95) 18%,
+      rgba(120,255,230,0.70) 40%,
+      rgba(30,190,175,0.35) 60%,
+      rgba(30,190,175,0.0) 78%
+    );
+
+  /* ✅ 가시성 확보: 링 + 강한 글로우 */
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.18),
+    0 0 26px rgba(30,190,175,0.35),
+    0 12px 26px rgba(0,0,0,0.12);
+
+  filter: blur(0px);
+  will-change: transform;
+}
+
+/* gallery lighting sweep (white-wall museum feel) */
+.filmSweep{
+  position: absolute;
+  inset: -25%;
+  pointer-events: none;
+
+  /* 흰 배경에서 “조명”처럼 보이는 아주 약한 스윕 */
+  background: radial-gradient(
+    640px 420px at 20% 20%,
+    rgba(255,255,255,0.85),
+    rgba(255,255,255,0.20) 40%,
+    rgba(255,255,255,0.00) 70%
+  );
+
+  opacity: 0.35;
+  mix-blend-mode: soft-light; /* 흰 배경에서도 은은하게 */
+  filter: blur(2px);
+  animation: sweepMove 12s ease-in-out infinite;
+}
+
+@keyframes sweepMove{
+  0%   { transform: translate3d(0%, 0%, 0); }
+  50%  { transform: translate3d(10%, 6%, 0); }
+  100% { transform: translate3d(0%, 0%, 0); }
+}
