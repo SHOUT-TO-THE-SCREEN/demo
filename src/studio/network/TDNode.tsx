@@ -1,7 +1,10 @@
 import { useEffect, useRef } from "react";
 import type { NodeProps } from "reactflow";
 import { Handle, Position } from "reactflow";
+
 import "./network.css";
+import "./tdnode.css";
+
 import { useStudioStore } from "../state/studioStore";
 import type { NodeKind } from "../state/studioStore";
 
@@ -35,7 +38,6 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
         <canvas ref={canvasRef} className="tdNode__canvas" />
       </div>
 
-      {/* Handles */}
       <Handle type="target" position={Position.Left} className="tdHandle tdHandle--in" />
       <Handle type="source" position={Position.Right} className="tdHandle tdHandle--out" />
     </div>

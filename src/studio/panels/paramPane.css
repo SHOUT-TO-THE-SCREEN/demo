@@ -1,0 +1,55 @@
+.paramPane{
+  width: 320px;
+  height: 100%;
+  padding: 14px;
+  border-left: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.22);
+  color: rgba(255,255,255,0.86);
+}
+
+.paramPane__title{
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.paramPane__empty{
+  font-size: 12px;
+  color: rgba(255,255,255,0.55);
+}
+
+.paramPane__row{
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.paramPane__label{
+  font-size: 12px;
+  color: rgba(255,255,255,0.65);
+}
+
+.paramPane__control{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.paramPane__input{
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.9);
+}
+
+.paramPane__value{
+  font-size: 12px;
+  width: 54px;
+  text-align: right;
+  color: rgba(255,255,255,0.65);
+}

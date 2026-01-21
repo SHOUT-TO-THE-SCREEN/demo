@@ -1,110 +1,92 @@
-import "./panels.css";
-import { useMemo } from "react";
+import "./paramPane.css";
 import { useStudioStore } from "../state/studioStore";
-import type { NodeKind, NodeParams } from "../state/studioStore";
 
-export default function ParamPane({ nodeId }: { nodeId: string | null }) {
-  const kindById = useStudioStore((s) => s.nodeKindById);
-  const paramsById = useStudioStore((s) => s.paramsById);
+export default function ParamPane() {
+  const selectedNodeId = useStudioStore((s) => s.selectedNodeId);
+  const kind = useStudioStore((s) => (selectedNodeId ? s.nodeKindById[selectedNodeId] : null));
+  const params = useStudioStore((s) => (selectedNodeId ? s.paramsById[selectedNodeId] : null));
   const setParam = useStudioStore((s) => s.setParam);
 
-  const kind = useMemo(() => (nodeId ? kindById[nodeId] : undefined), [nodeId, kindById]);
-  const params = useMemo(() => (nodeId ? paramsById[nodeId] : undefined), [nodeId, paramsById]);
-
-  if (!nodeId || !kind) {
+  if (!selectedNodeId || !kind) {
     return (
-      <div className="tdPanel">
-        <div className="tdPanel__hdr">Parameters</div>
-        <div className="tdPanel__body">
-          <div className="tdMuted">Select a node to edit parameters.</div>
-        </div>
-      </div>
+      <aside className="paramPane">
+        <div className="paramPane__title">Parameters</div>
+        <div className="paramPane__empty">노드를 선택하세요.</div>
+      </aside>
     );
   }
 
-  const p = params as NodeParams | undefined;
+  if (kind !== "noise") {
+    return (
+      <aside className="paramPane">
+        <div className="paramPane__title">Parameters</div>
+        <div className="paramPane__empty">{kind}는 아직 미구현입니다.</div>
+      </aside>
+    );
+  }
+
+  const p =
+    params && params.kind === "noise"
+      ? params
+      : { kind: "noise" as const, seed: 1, scale: 18, speed: 0.8, contrast: 1.2 };
 
   return (
-    <div className="tdPanel">
-      <div className="tdPanel__hdr">Parameters</div>
-      <div className="tdPanel__body">
-        <div className="tdKV">
-          <div className="tdKV__k">Node</div>
-          <div className="tdKV__v">{nodeId}</div>
-          <div className="tdKV__k">Kind</div>
-          <div className="tdKV__v">{kind}</div>
-        </div>
+    <aside className="paramPane">
+      <div className="paramPane__title">Noise TOP</div>
 
-        <div className="tdDivider" />
+      <Row label="Seed">
+        <input
+          className="paramPane__input"
+          type="number"
+          value={p.seed}
+          onChange={(e) => setParam(selectedNodeId, "noise", { seed: Number(e.target.value) || 0 })}
+        />
+      </Row>
 
-        {kind === "audioIn" && (
-          <>
-            <div className="tdField">
-              <div className="tdField__label">Gain</div>
-              <input
-                className="tdRange"
-                type="range"
-                min={0}
-                max={2}
-                step={0.01}
-                value={p?.kind === "audioIn" ? p.gain : 1}
-                onChange={(e) => setParam(nodeId, "audioIn", { gain: Number(e.target.value) })}
-              />
-              <div className="tdField__value">{(p?.kind === "audioIn" ? p.gain : 1).toFixed(2)}</div>
-            </div>
-          </>
-        )}
+      <Row label="Scale">
+        <input
+          type="range"
+          min={2}
+          max={80}
+          step={1}
+          value={p.scale}
+          onChange={(e) => setParam(selectedNodeId, "noise", { scale: Number(e.target.value) })}
+        />
+        <span className="paramPane__value">{p.scale}</span>
+      </Row>
 
-        {kind === "fft" && (
-          <>
-            <div className="tdField">
-              <div className="tdField__label">Smoothing</div>
-              <input
-                className="tdRange"
-                type="range"
-                min={0}
-                max={0.99}
-                step={0.01}
-                value={p?.kind === "fft" ? p.smoothing : 0.85}
-                onChange={(e) => setParam(nodeId, "fft", { smoothing: Number(e.target.value) })}
-              />
-              <div className="tdField__value">{(p?.kind === "fft" ? p.smoothing : 0.85).toFixed(2)}</div>
-            </div>
+      <Row label="Speed">
+        <input
+          type="range"
+          min={0}
+          max={3}
+          step={0.01}
+          value={p.speed}
+          onChange={(e) => setParam(selectedNodeId, "noise", { speed: Number(e.target.value) })}
+        />
+        <span className="paramPane__value">{p.speed.toFixed(2)}</span>
+      </Row>
 
-            <div className="tdField">
-              <div className="tdField__label">Intensity</div>
-              <input
-                className="tdRange"
-                type="range"
-                min={0.2}
-                max={2}
-                step={0.01}
-                value={p?.kind === "fft" ? p.intensity : 1}
-                onChange={(e) => setParam(nodeId, "fft", { intensity: Number(e.target.value) })}
-              />
-              <div className="tdField__value">{(p?.kind === "fft" ? p.intensity : 1).toFixed(2)}</div>
-            </div>
-          </>
-        )}
+      <Row label="Contrast">
+        <input
+          type="range"
+          min={0.2}
+          max={2.5}
+          step={0.01}
+          value={p.contrast}
+          onChange={(e) => setParam(selectedNodeId, "noise", { contrast: Number(e.target.value) })}
+        />
+        <span className="paramPane__value">{p.contrast.toFixed(2)}</span>
+      </Row>
+    </aside>
+  );
+}
 
-        {kind === "output" && (
-          <>
-            <div className="tdField">
-              <div className="tdField__label">Exposure</div>
-              <input
-                className="tdRange"
-                type="range"
-                min={0.2}
-                max={2}
-                step={0.01}
-                value={p?.kind === "output" ? p.exposure : 1}
-                onChange={(e) => setParam(nodeId, "output", { exposure: Number(e.target.value) })}
-              />
-              <div className="tdField__value">{(p?.kind === "output" ? p.exposure : 1).toFixed(2)}</div>
-            </div>
-          </>
-        )}
-      </div>
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="paramPane__row">
+      <div className="paramPane__label">{label}</div>
+      <div className="paramPane__control">{children}</div>
     </div>
   );
 }

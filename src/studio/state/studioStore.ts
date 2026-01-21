@@ -19,9 +19,11 @@ type StudioState = {
   previewCanvasByNodeId: Record<string, HTMLCanvasElement | null>;
 
   setSelectedNodeId: (id: string | null) => void;
+
   setNodeKind: (id: string, kind: NodeKind) => void;
 
   ensureNodeParams: (id: string, kind: NodeKind) => void;
+
   setParam: <K extends NodeParams["kind"]>(
     id: string,
     kind: K,

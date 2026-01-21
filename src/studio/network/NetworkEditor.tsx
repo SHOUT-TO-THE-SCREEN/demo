@@ -15,7 +15,7 @@ import "reactflow/dist/style.css";
 import "./network.css";
 
 import TDNode from "./TDNode";
-import OpCreatorDialog from "./OpcreatorDialog";
+import OpCreatorDialog from "./OpCreatorDialog";
 
 import { useStudioStore } from "../state/studioStore";
 import { usePreviewRuntime } from "../runtime/usePreviewRuntime";
@@ -56,26 +56,11 @@ function NetworkEditorInner() {
 
   const initialNodes: TDNodeType[] = useMemo(
     () => [
-      {
-        id: "audio",
-        type: "td",
-        position: { x: 80, y: 120 },
-        data: { label: "audioIn", kind: "audioIn" },
-      },
-      {
-        id: "fft",
-        type: "td",
-        position: { x: 420, y: 120 },
-        data: { label: "fft", kind: "fft" },
-      },
-      {
-        id: "out",
-        type: "td",
-        position: { x: 760, y: 120 },
-        data: { label: "output", kind: "output" },
-      },
+      { id: "audio", type: "td", position: { x: 80, y: 120 }, data: { label: "audioIn", kind: "audioIn" } },
+      { id: "fft", type: "td", position: { x: 420, y: 120 }, data: { label: "fft", kind: "fft" } },
+      { id: "out", type: "td", position: { x: 760, y: 120 }, data: { label: "output", kind: "output" } },
     ],
-    [],
+    []
   );
 
   const initialEdges: TDEdgeType[] = useMemo(
@@ -83,22 +68,18 @@ function NetworkEditorInner() {
       { id: "e1", source: "audio", target: "fft", animated: true },
       { id: "e2", source: "fft", target: "out", animated: true },
     ],
-    [],
+    []
   );
 
-  const [nodes, setNodes, onNodesChange] =
-    useNodesState<TDNodeData>(initialNodes);
-  const [edges, setEdges, onEdgesChange] =
-    useEdgesState<TDEdgeType>(initialEdges);
+  const [nodes, setNodes, onNodesChange] = useNodesState<TDNodeData>(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<TDEdgeType>(initialEdges);
 
   const rf = useReactFlow();
   const wrapperRef = useRef<HTMLDivElement | null>(null);
 
-  // OP Creator UI state (NetworkEditor에서 관리)
+  // === OP Creator state ===
   const [opOpen, setOpOpen] = useState(false);
-  const [opAnchor, setOpAnchor] = useState<{ x: number; y: number } | null>(
-    null,
-  ); // clientX/Y
+  const [opAnchor, setOpAnchor] = useState<{ x: number; y: number } | null>(null);
   const [opQuery, setOpQuery] = useState("");
   const [opSel, setOpSel] = useState(0);
 
@@ -125,14 +106,13 @@ function NetworkEditorInner() {
   }, [initialNodes, setNodeKind, ensureNodeParams]);
 
   const onConnect = useCallback(
-    (c: Connection) =>
-      setEdges((eds: TDEdgeType[]) => addEdge({ ...c, animated: true }, eds)),
-    [setEdges],
+    (c: Connection) => setEdges((eds: TDEdgeType[]) => addEdge({ ...c, animated: true }, eds)),
+    [setEdges]
   );
 
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: TDNodeType) => setSelectedNodeId(node.id),
-    [setSelectedNodeId],
+    [setSelectedNodeId]
   );
 
   // 외부(spawnNode)에서 생성 가능하도록 impl 등록
@@ -141,16 +121,9 @@ function NetworkEditorInner() {
       const id = makeId(kind);
 
       let pos = { x: 220, y: 180 };
-      if (
-        wrapperRef.current &&
-        typeof clientX === "number" &&
-        typeof clientY === "number"
-      ) {
+      if (wrapperRef.current && typeof clientX === "number" && typeof clientY === "number") {
         const rect = wrapperRef.current.getBoundingClientRect();
-        pos = rf.screenToFlowPosition({
-          x: clientX - rect.left,
-          y: clientY - rect.top,
-        });
+        pos = rf.screenToFlowPosition({ x: clientX - rect.left, y: clientY - rect.top });
       }
 
       const newNode: TDNodeType = {
@@ -168,38 +141,24 @@ function NetworkEditorInner() {
 
     setSpawnImpl(impl);
     return () => setSpawnImpl(null);
-  }, [
-    rf,
-    setNodes,
-    setNodeKind,
-    ensureNodeParams,
-    setSelectedNodeId,
-    setSpawnImpl,
-  ]);
+  }, [rf, setNodes, setNodeKind, ensureNodeParams, setSelectedNodeId, setSpawnImpl]);
 
-  // 캔버스 더블클릭: OP Creator 오픈
-  // 더블클릭 판별용 ref
-const lastPaneClickRef = useRef<number>(0);
-const DBL_MS = 280; // 더블클릭 허용 시간(조절 가능)
+  // === Pane double click (버전 호환) ===
+  const lastPaneClickRef = useRef<number>(0);
+  const DBL_MS = 280;
 
-// Pane click으로 더블클릭 흉내
-const onPaneClick = useCallback(
-  (e: React.MouseEvent) => {
-    const now = performance.now();
-    const dt = now - lastPaneClickRef.current;
-    lastPaneClickRef.current = now;
+  const onPaneClick = useCallback(
+    (e: React.MouseEvent) => {
+      const now = performance.now();
+      const dt = now - lastPaneClickRef.current;
+      lastPaneClickRef.current = now;
 
-    // 디버그 로그
-    console.log("[RF] onPaneClick", { dt, x: e.clientX, y: e.clientY });
-
-    if (dt < DBL_MS) {
-      console.log("[RF] double-click detected");
-      openOpCreator(e.clientX, e.clientY);
-    }
-  },
-  [openOpCreator]
-);
-
+      if (dt < DBL_MS) {
+        openOpCreator(e.clientX, e.clientY);
+      }
+    },
+    [openOpCreator]
+  );
 
   // Drag & Drop 생성
   const onDragOver = useCallback((e: React.DragEvent) => {
@@ -216,10 +175,7 @@ const onPaneClick = useCallback(
       const rect = wrapperRef.current?.getBoundingClientRect();
       if (!rect) return;
 
-      const pos = rf.screenToFlowPosition({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
-      });
+      const pos = rf.screenToFlowPosition({ x: e.clientX - rect.left, y: e.clientY - rect.top });
       const id = makeId(kind);
 
       const newNode: TDNodeType = {
@@ -234,14 +190,12 @@ const onPaneClick = useCallback(
       ensureNodeParams(id, kind);
       setSelectedNodeId(id);
     },
-    [rf, setNodes, setNodeKind, ensureNodeParams, setSelectedNodeId],
+    [rf, setNodes, setNodeKind, ensureNodeParams, setSelectedNodeId]
   );
 
   // 썸네일 렌더 런타임
   usePreviewRuntime(nodes, edges);
-  useEffect(() => {
-    console.log("[OP] state changed", { opOpen, opAnchor, opQuery, opSel });
-  }, [opOpen, opAnchor, opQuery, opSel]);
+
   return (
     <div className="tdNet" ref={wrapperRef}>
       <ReactFlow
@@ -253,7 +207,7 @@ const onPaneClick = useCallback(
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onNodeClick={onNodeClick}
-  onPaneClick={onPaneClick}
+        onPaneClick={onPaneClick}
         onDragOver={onDragOver}
         onDrop={onDrop}
         zoomOnDoubleClick={false}
