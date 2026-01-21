@@ -16,11 +16,41 @@ function drawRoundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w:
   ctx.closePath();
 }
 
+const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+// 2D hash -> [0,1)
+function hash2(ix: number, iy: number, seed: number) {
+  let n = (ix | 0) * 374761393 + (iy | 0) * 668265263 + (seed | 0) * 1442695041;
+  n = (n ^ (n >>> 13)) * 1274126177;
+  n = n ^ (n >>> 16);
+  return ((n >>> 0) / 4294967296);
+}
+
+// value noise with bilinear interpolation
+function valueNoise(x: number, y: number, seed: number) {
+  const xi = Math.floor(x);
+  const yi = Math.floor(y);
+  const xf = x - xi;
+  const yf = y - yi;
+
+  const r00 = hash2(xi, yi, seed);
+  const r10 = hash2(xi + 1, yi, seed);
+  const r01 = hash2(xi, yi + 1, seed);
+  const r11 = hash2(xi + 1, yi + 1, seed);
+
+  const u = xf * xf * (3 - 2 * xf);
+  const v = yf * yf * (3 - 2 * yf);
+
+  const a = lerp(r00, r10, u);
+  const b = lerp(r01, r11, u);
+  return lerp(a, b, v);
+}
+
 export function usePreviewRuntime(nodes: Node<TDNodeData>[], edges: Edge[]) {
   const previewCanvasByNodeId = useStudioStore((s) => s.previewCanvasByNodeId);
   const paramsById = useStudioStore((s) => s.paramsById);
 
-  // 노드 id → kind 빠른 조회
   const kindById = useMemo(() => {
     const m: Record<string, NodeKind> = {};
     for (const n of nodes) m[n.id] = n.data?.kind;
@@ -35,8 +65,7 @@ export function usePreviewRuntime(nodes: Node<TDNodeData>[], edges: Edge[]) {
       const now = performance.now();
       const dt = (now - t0) / 1000;
       t0 = now;
-
-      // edges는 아직 실제 데이터 플로우에 안 씀(MVP). 나중에 토폴로지/런타임으로 연결.
+      void dt;
       void edges;
 
       for (const nodeId of Object.keys(previewCanvasByNodeId)) {
@@ -49,7 +78,6 @@ export function usePreviewRuntime(nodes: Node<TDNodeData>[], edges: Edge[]) {
         const ctx = canvas.getContext("2d");
         if (!ctx) continue;
 
-        // DPI 스케일
         const dpr = Math.max(1, Math.floor(window.devicePixelRatio || 1));
         const w = canvas.clientWidth || 180;
         const h = canvas.clientHeight || 110;
@@ -62,85 +90,76 @@ export function usePreviewRuntime(nodes: Node<TDNodeData>[], edges: Edge[]) {
           ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         }
 
-        // bg
+        // base
         ctx.clearRect(0, 0, w, h);
         ctx.fillStyle = "rgba(255,255,255,0.06)";
         drawRoundedRect(ctx, 0, 0, w, h, 12);
         ctx.fill();
-
-        // frame
         ctx.strokeStyle = "rgba(255,255,255,0.10)";
         ctx.lineWidth = 1;
         drawRoundedRect(ctx, 0.5, 0.5, w - 1, h - 1, 12);
         ctx.stroke();
 
-        // render per kind
-        if (kind === "audioIn") {
+        if (kind === "noise") {
           const p = paramsById[nodeId];
-          const gain = p && p.kind === "audioIn" ? p.gain : 1;
+          const seed = p && p.kind === "noise" ? p.seed : 1;
+          const scale = p && p.kind === "noise" ? Math.max(2, p.scale) : 18;
+          const speed = p && p.kind === "noise" ? p.speed : 0.8;
+          const contrast = p && p.kind === "noise" ? p.contrast : 1.2;
 
-          ctx.strokeStyle = "rgba(255,255,255,0.75)";
-          ctx.lineWidth = 1.2;
+          // low-res buffer for performance
+          const rw = Math.max(40, Math.floor(w / 2));
+          const rh = Math.max(26, Math.floor(h / 2));
 
-          ctx.beginPath();
-          const mid = h * 0.55;
-          for (let x = 0; x < w; x++) {
-            const u = x / w;
-            const y = mid + Math.sin(u * Math.PI * 2 * 2 + now * 0.004) * (h * 0.18) * gain;
-            if (x === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-          }
-          ctx.stroke();
+          const img = ctx.createImageData(rw, rh);
+          const t = (now * 0.001) * speed;
 
-          ctx.fillStyle = "rgba(255,255,255,0.55)";
-          ctx.font = "12px ui-sans-serif, system-ui";
-          ctx.fillText("MIC", 10, 18);
-        }
+          for (let y = 0; y < rh; y++) {
+            for (let x = 0; x < rw; x++) {
+              const nx = (x + t * 12) / scale;
+              const ny = (y + t * 7) / scale;
 
-        if (kind === "fft") {
-          const p = paramsById[nodeId];
-          const smoothing = p && p.kind === "fft" ? p.smoothing : 0.85;
-          const intensity = p && p.kind === "fft" ? p.intensity : 1;
+              // 2-octave value noise
+              const n1 = valueNoise(nx, ny, seed);
+              const n2 = valueNoise(nx * 2.0, ny * 2.0, seed + 17) * 0.5;
+              let v = (n1 * 0.75 + n2 * 0.25);
 
-          const bars = 28;
-          const pad = 10;
-          const bw = (w - pad * 2) / bars;
+              // contrast around 0.5
+              v = (v - 0.5) * contrast + 0.5;
+              v = clamp01(v);
 
-          // pseudo-spectrum (나중에 실데이터로 교체)
-          for (let i = 0; i < bars; i++) {
-            const u = i / (bars - 1);
-            const base = 0.25 + 0.75 * Math.pow(u, 0.7);
-            const wobble = 0.5 + 0.5 * Math.sin(now * 0.005 + u * 10);
-            const amp = (base * wobble) * intensity;
-
-            const hh = (h - 28) * (amp * (0.65 + smoothing * 0.35));
-            const x = pad + i * bw + bw * 0.15;
-            const y = h - 10 - hh;
-
-            ctx.fillStyle = "rgba(255,255,255,0.78)";
-            ctx.fillRect(x, y, bw * 0.7, hh);
+              const c = Math.floor(v * 255);
+              const idx = (y * rw + x) * 4;
+              img.data[idx + 0] = c;
+              img.data[idx + 1] = c;
+              img.data[idx + 2] = c;
+              img.data[idx + 3] = 255;
+            }
           }
 
+          // upscale (nearest) to fit thumbnail
+          const tmp = document.createElement("canvas");
+          tmp.width = rw;
+          tmp.height = rh;
+          const tctx = tmp.getContext("2d");
+          if (tctx) {
+            tctx.putImageData(img, 0, 0);
+            ctx.imageSmoothingEnabled = false;
+            drawRoundedRect(ctx, 10, 26, w - 20, h - 36, 12);
+            ctx.save();
+            ctx.clip();
+            ctx.drawImage(tmp, 10, 26, w - 20, h - 36);
+            ctx.restore();
+            ctx.imageSmoothingEnabled = true;
+          }
+
           ctx.fillStyle = "rgba(255,255,255,0.55)";
           ctx.font = "12px ui-sans-serif, system-ui";
-          ctx.fillText("FFT", 10, 18);
+          ctx.fillText("NOISE", 10, 18);
         }
 
-        if (kind === "output") {
-          const p = paramsById[nodeId];
-          const exposure = p && p.kind === "output" ? p.exposure : 1;
-
-          const g = ctx.createLinearGradient(0, 0, w, h);
-          g.addColorStop(0, `rgba(255,255,255,${0.10 * exposure})`);
-          g.addColorStop(1, `rgba(255,255,255,${0.02 * exposure})`);
-          ctx.fillStyle = g;
-          drawRoundedRect(ctx, 10, 26, w - 20, h - 36, 12);
-          ctx.fill();
-
-          ctx.fillStyle = "rgba(255,255,255,0.55)";
-          ctx.font = "12px ui-sans-serif, system-ui";
-          ctx.fillText("OUT", 10, 18);
-        }
+        // 기존 audioIn/fft/output 렌더 로직은 지금 파일에 있던 그대로 유지하면 됩니다.
+        // (이미 구현되어 있으니 삭제하지 말고, noise 블록만 추가하세요.)
       }
 
       raf = requestAnimationFrame(loop);

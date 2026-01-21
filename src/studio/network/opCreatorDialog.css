@@ -76,3 +76,13 @@
   opacity: 0.75;
   align-self: center;
 }
+.opCreatorDragBar {
+  height: 10px;
+  cursor: grab;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.opCreatorDragBar:active {
+  cursor: grabbing;
+}

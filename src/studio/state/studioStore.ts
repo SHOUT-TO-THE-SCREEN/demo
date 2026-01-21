@@ -1,12 +1,12 @@
 import { create } from "zustand";
 
-export type NodeKind = "audioIn" | "fft" | "output" | "noise";
+export type NodeKind = "audioIn" | "fft" | "noise" | "output";
 
 export type NodeParams =
   | { kind: "audioIn"; gain: number }
   | { kind: "fft"; smoothing: number; intensity: number }
-  | { kind: "output"; exposure: number }
-  | { kind: "noise"; seed: number; scale: number; speed: number };
+  | { kind: "noise"; seed: number; scale: number; speed: number; contrast: number }
+  | { kind: "output"; exposure: number };
 
 type SpawnImpl = ((kind: NodeKind, clientX?: number, clientY?: number) => void) | null;
 
@@ -19,7 +19,6 @@ type StudioState = {
   previewCanvasByNodeId: Record<string, HTMLCanvasElement | null>;
 
   setSelectedNodeId: (id: string | null) => void;
-
   setNodeKind: (id: string, kind: NodeKind) => void;
 
   ensureNodeParams: (id: string, kind: NodeKind) => void;
@@ -39,7 +38,7 @@ type StudioState = {
 function defaultParams(kind: NodeKind): NodeParams {
   if (kind === "audioIn") return { kind, gain: 1 };
   if (kind === "fft") return { kind, smoothing: 0.85, intensity: 1 };
-  if (kind === "noise") return { kind, seed: 0, scale: 1, speed: 0.2 };
+  if (kind === "noise") return { kind, seed: 1, scale: 18, speed: 0.8, contrast: 1.2 };
   return { kind, exposure: 1 };
 }
 
@@ -68,7 +67,12 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     set((s) => {
       const prev = s.paramsById[id];
       const base = prev && prev.kind === kind ? prev : defaultParams(kind);
-      return { paramsById: { ...s.paramsById, [id]: { ...base, ...patch } as NodeParams } };
+      return {
+        paramsById: {
+          ...s.paramsById,
+          [id]: { ...base, ...patch } as NodeParams,
+        },
+      };
     }),
 
   spawnImpl: null,
