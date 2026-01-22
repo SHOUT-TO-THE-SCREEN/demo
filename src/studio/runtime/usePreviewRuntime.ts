@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import type { Edge, Node } from "reactflow";
 import { useStudioStore } from "../state/studioStore";
-import type { NodeKind } from "../state/studioStore";
+import type { NodeKind, RampParams } from "../state/studioStore";
 
 type TDNodeData = { label: string; kind: NodeKind };
 
@@ -54,6 +54,30 @@ function valueNoise(x: number, y: number, seed: number) {
   return lerp(a, b, v);
 }
 
+function ensureCanvas(cache: Map<string, HTMLCanvasElement>, key: string, w: number, h: number) {
+  const c = cache.get(key) ?? document.createElement("canvas");
+  if (c.width !== w || c.height !== h) {
+    c.width = w;
+    c.height = h;
+  }
+  if (!cache.has(key)) cache.set(key, c);
+  return c;
+}
+
+function buildRampLUTCanvas(cache: Map<string, HTMLCanvasElement>, nodeId: string, ramp: RampParams) {
+  const lut = ensureCanvas(cache, `lut:${nodeId}`, 256, 1);
+  const ctx = lut.getContext("2d")!;
+  const g = ctx.createLinearGradient(0, 0, 256, 0);
+
+  const stops = [...ramp.stops].sort((a, b) => a.t - b.t);
+  for (const s of stops) g.addColorStop(clamp01(s.t), s.color);
+
+  ctx.clearRect(0, 0, 256, 1);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 256, 1);
+  return lut;
+}
+
 export function usePreviewRuntime(nodes: Node<TDNodeData>[], edges: Edge[]) {
   const previewCanvasByNodeId = useStudioStore((s) => s.previewCanvasByNodeId);
   const paramsById = useStudioStore((s) => s.paramsById);
@@ -64,17 +88,185 @@ export function usePreviewRuntime(nodes: Node<TDNodeData>[], edges: Edge[]) {
     return m;
   }, [nodes]);
 
-  useEffect(() => {
-    void edges;
+  // targetId -> (handle -> sourceId)
+  const inputMap = useMemo(() => {
+    const m: Record<string, Record<string, string>> = {};
+    for (const e of edges) {
+      const t = e.target;
+      const th = (e.targetHandle || "in").toString();
+      if (!m[t]) m[t] = {};
+      m[t][th] = e.source;
+    }
+    return m;
+  }, [edges]);
 
-    // Offscreen(재사용) 버퍼: 매 프레임 생성 금지
-    const off = document.createElement("canvas");
-    const offCtx = off.getContext("2d", { willReadFrequently: true });
+  useEffect(() => {
+    // Offscreen caches (재사용)
+    const canvasCache = new Map<string, HTMLCanvasElement>();
 
     let raf = 0;
 
     const loop = () => {
       const now = performance.now();
+
+      // frame-local evaluation cache
+      const evalCache = new Map<string, HTMLCanvasElement>();
+
+      const evalTOP = (nodeId: string, w: number, h: number): HTMLCanvasElement | null => {
+        if (evalCache.has(nodeId)) return evalCache.get(nodeId)!;
+
+        const kind = kindById[nodeId];
+        if (!kind) return null;
+
+        // === NOISE ===
+        if (kind === "noise") {
+          const p = paramsById[nodeId];
+          const seed = p && p.kind === "noise" ? p.seed : 1;
+          const scale = p && p.kind === "noise" ? Math.max(2, p.scale) : 18;
+          const speed = p && p.kind === "noise" ? p.speed : 0.8;
+          const contrast = p && p.kind === "noise" ? p.contrast : 1.2;
+
+          const out = ensureCanvas(canvasCache, `top:${nodeId}`, w, h);
+          const ctx = out.getContext("2d", { willReadFrequently: true })!;
+          const img = ctx.createImageData(w, h);
+          const data = img.data;
+
+          const t = (now * 0.001) * speed;
+
+          for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+              const nx = (x + t * 14) / scale;
+              const ny = (y + t * 9) / scale;
+
+              const n1 = valueNoise(nx, ny, seed);
+              const n2 = valueNoise(nx * 2.0, ny * 2.0, seed + 17) * 0.5;
+              let v = n1 * 0.75 + n2 * 0.25;
+
+              v = (v - 0.5) * contrast + 0.5;
+              v = clamp01(v);
+
+              const c = (v * 255) | 0;
+              const idx = (y * w + x) * 4;
+              data[idx + 0] = c;
+              data[idx + 1] = c;
+              data[idx + 2] = c;
+              data[idx + 3] = 255;
+            }
+          }
+
+          ctx.putImageData(img, 0, 0);
+          evalCache.set(nodeId, out);
+          return out;
+        }
+
+        // === RAMP (LUT) ===
+        if (kind === "ramp") {
+          const p = paramsById[nodeId];
+          const ramp: RampParams =
+            p && p.kind === "ramp"
+              ? p
+              : {
+                  kind: "ramp",
+                  interpolation: "linear",
+                  stops: [
+                    { id: "a", t: 0.0, color: "#000000" },
+                    { id: "b", t: 0.45, color: "#ff8a00" },
+                    { id: "c", t: 1.0, color: "#ffffff" },
+                  ],
+                };
+
+          const lut = buildRampLUTCanvas(canvasCache, nodeId, ramp);
+          evalCache.set(nodeId, lut);
+          return lut;
+        }
+
+        // === LOOKUP ===
+        if (kind === "lookup") {
+          const p = paramsById[nodeId];
+          const invert = p && p.kind === "lookup" ? p.invert : false;
+
+          const srcId = inputMap[nodeId]?.["in"] ?? inputMap[nodeId]?.["0"];
+          const lutId = inputMap[nodeId]?.["lut"] ?? inputMap[nodeId]?.["1"];
+
+          if (!srcId || !lutId) return null;
+
+          const src = evalTOP(srcId, w, h);
+          const lut = evalTOP(lutId, 256, 1);
+          if (!src || !lut) return null;
+
+          const srcCtx = src.getContext("2d", { willReadFrequently: true })!;
+          const lutCtx = lut.getContext("2d", { willReadFrequently: true })!;
+
+          const srcImg = srcCtx.getImageData(0, 0, w, h);
+          const lutImg = lutCtx.getImageData(0, 0, 256, 1);
+
+          const out = ensureCanvas(canvasCache, `top:${nodeId}`, w, h);
+          const outCtx = out.getContext("2d", { willReadFrequently: true })!;
+          const outImg = outCtx.createImageData(w, h);
+
+          const sdata = srcImg.data;
+          const ldata = lutImg.data;
+          const odata = outImg.data;
+
+          for (let i = 0; i < w * h; i++) {
+            const si = i * 4;
+            let v = sdata[si]; // 0..255 from R
+            if (invert) v = 255 - v;
+
+            const li = v * 4;
+            odata[si + 0] = ldata[li + 0];
+            odata[si + 1] = ldata[li + 1];
+            odata[si + 2] = ldata[li + 2];
+            odata[si + 3] = 255;
+          }
+
+          outCtx.putImageData(outImg, 0, 0);
+          evalCache.set(nodeId, out);
+          return out;
+        }
+
+        // === OUTPUT ===
+        if (kind === "output") {
+          const srcId = inputMap[nodeId]?.["in"] ?? inputMap[nodeId]?.["0"];
+          if (!srcId) return null;
+
+          // output은 exposure만 간단히 적용(미리보기)
+          const p = paramsById[nodeId];
+          const exposure = p && p.kind === "output" ? p.exposure : 1;
+
+          const src = evalTOP(srcId, w, h);
+          if (!src) return null;
+
+          if (exposure === 1) {
+            evalCache.set(nodeId, src);
+            return src;
+          }
+
+          const srcCtx = src.getContext("2d", { willReadFrequently: true })!;
+          const srcImg = srcCtx.getImageData(0, 0, w, h);
+
+          const out = ensureCanvas(canvasCache, `top:${nodeId}`, w, h);
+          const outCtx = out.getContext("2d", { willReadFrequently: true })!;
+          const outImg = outCtx.createImageData(w, h);
+
+          const sdata = srcImg.data;
+          const odata = outImg.data;
+
+          for (let i = 0; i < w * h; i++) {
+            const si = i * 4;
+            odata[si + 0] = Math.max(0, Math.min(255, (sdata[si + 0] * exposure) | 0));
+            odata[si + 1] = Math.max(0, Math.min(255, (sdata[si + 1] * exposure) | 0));
+            odata[si + 2] = Math.max(0, Math.min(255, (sdata[si + 2] * exposure) | 0));
+            odata[si + 3] = 255;
+          }
+
+          outCtx.putImageData(outImg, 0, 0);
+          evalCache.set(nodeId, out);
+          return out;
+        }
+
+        return null;
+      };
 
       for (const nodeId of Object.keys(previewCanvasByNodeId)) {
         const canvas = previewCanvasByNodeId[nodeId];
@@ -106,66 +298,47 @@ export function usePreviewRuntime(nodes: Node<TDNodeData>[], edges: Edge[]) {
         drawRoundedRect(ctx, 0.5, 0.5, w - 1, h - 1, 12);
         ctx.stroke();
 
-        // === NOISE ===
-        if (kind === "noise") {
-          const p = paramsById[nodeId];
-          const seed = p && p.kind === "noise" ? p.seed : 1;
-          const scale = p && p.kind === "noise" ? Math.max(2, p.scale) : 18;
-          const speed = p && p.kind === "noise" ? p.speed : 0.8;
-          const contrast = p && p.kind === "noise" ? p.contrast : 1.2;
+        // inner viewport
+        const vx = 10;
+        const vy = 26;
+        const vw = w - 20;
+        const vh = h - 36;
 
-          const rw = Math.max(48, Math.floor((w - 20) / 2));
-          const rh = Math.max(32, Math.floor((h - 36) / 2));
+        // determine internal resolution
+        const rw = Math.max(96, Math.floor(vw));
+        const rh = Math.max(64, Math.floor(vh));
 
-          if (off.width !== rw || off.height !== rh) {
-            off.width = rw;
-            off.height = rh;
+        // render label
+        ctx.fillStyle = "rgba(255,255,255,0.55)";
+        ctx.font = "12px ui-sans-serif, system-ui";
+        ctx.fillText(kind.toUpperCase(), 10, 18);
+
+        // draw output
+        const out =
+          kind === "ramp"
+            ? evalTOP(nodeId, 256, 1)
+            : evalTOP(nodeId, rw, rh);
+
+        if (out) {
+          ctx.imageSmoothingEnabled = false;
+          drawRoundedRect(ctx, vx, vy, vw, vh, 12);
+          ctx.save();
+          ctx.clip();
+
+          if (kind === "ramp") {
+            // LUT는 세로로 늘려서 보여주기
+            ctx.drawImage(out, vx, vy, vw, vh);
+          } else {
+            ctx.drawImage(out, vx, vy, vw, vh);
           }
 
-          if (offCtx) {
-            const img = offCtx.createImageData(rw, rh);
-            const data = img.data;
-
-            const t = (now * 0.001) * speed;
-
-            for (let y = 0; y < rh; y++) {
-              for (let x = 0; x < rw; x++) {
-                const nx = (x + t * 14) / scale;
-                const ny = (y + t * 9) / scale;
-
-                const n1 = valueNoise(nx, ny, seed);
-                const n2 = valueNoise(nx * 2.0, ny * 2.0, seed + 17) * 0.5;
-                let v = n1 * 0.75 + n2 * 0.25;
-
-                v = (v - 0.5) * contrast + 0.5;
-                v = clamp01(v);
-
-                const c = (v * 255) | 0;
-                const idx = (y * rw + x) * 4;
-                data[idx + 0] = c;
-                data[idx + 1] = c;
-                data[idx + 2] = c;
-                data[idx + 3] = 255;
-              }
-            }
-
-            offCtx.putImageData(img, 0, 0);
-
-            ctx.imageSmoothingEnabled = false;
-            drawRoundedRect(ctx, 10, 26, w - 20, h - 36, 12);
-            ctx.save();
-            ctx.clip();
-            ctx.drawImage(off, 10, 26, w - 20, h - 36);
-            ctx.restore();
-            ctx.imageSmoothingEnabled = true;
-
-            ctx.fillStyle = "rgba(255,255,255,0.55)";
-            ctx.font = "12px ui-sans-serif, system-ui";
-            ctx.fillText("NOISE", 10, 18);
-          }
+          ctx.restore();
+          ctx.imageSmoothingEnabled = true;
+        } else {
+          ctx.fillStyle = "rgba(255,255,255,0.25)";
+          ctx.font = "11px ui-sans-serif, system-ui";
+          ctx.fillText("No input", vx, vy + 14);
         }
-
-        // 필요하면 여기에서 fft/audio/output 렌더를 확장하면 됨
       }
 
       raf = requestAnimationFrame(loop);
@@ -173,5 +346,5 @@ export function usePreviewRuntime(nodes: Node<TDNodeData>[], edges: Edge[]) {
 
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [previewCanvasByNodeId, paramsById, kindById, edges]);
+  }, [previewCanvasByNodeId, paramsById, kindById, inputMap]);
 }

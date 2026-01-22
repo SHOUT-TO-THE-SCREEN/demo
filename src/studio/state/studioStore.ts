@@ -1,11 +1,16 @@
 import { create } from "zustand";
 
-export type NodeKind = "audioIn" | "fft" | "noise" | "output";
+export type NodeKind = "audioIn" | "fft" | "noise" | "ramp" | "lookup" | "output";
+
+export type RampStop = { id: string; t: number; color: string };
+export type RampParams = { kind: "ramp"; stops: RampStop[]; interpolation: "linear" | "smoothstep" };
 
 export type NodeParams =
   | { kind: "audioIn"; gain: number }
   | { kind: "fft"; smoothing: number; intensity: number }
   | { kind: "noise"; seed: number; scale: number; speed: number; contrast: number }
+  | RampParams
+  | { kind: "lookup"; invert: boolean }
   | { kind: "output"; exposure: number };
 
 type SpawnImpl = ((kind: NodeKind, clientX?: number, clientY?: number) => void) | null;
@@ -41,6 +46,17 @@ function defaultParams(kind: NodeKind): NodeParams {
   if (kind === "audioIn") return { kind, gain: 1 };
   if (kind === "fft") return { kind, smoothing: 0.85, intensity: 1 };
   if (kind === "noise") return { kind, seed: 1, scale: 18, speed: 0.8, contrast: 1.2 };
+  if (kind === "ramp")
+    return {
+      kind,
+      interpolation: "linear",
+      stops: [
+        { id: "a", t: 0.0, color: "#000000" },
+        { id: "b", t: 0.45, color: "#ff8a00" },
+        { id: "c", t: 1.0, color: "#ffffff" },
+      ],
+    };
+  if (kind === "lookup") return { kind, invert: false };
   return { kind, exposure: 1 };
 }
 

@@ -53,3 +53,70 @@
   text-align: right;
   color: rgba(255,255,255,0.65);
 }
+.paramPane__rampPreview {
+  height: 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  margin: 8px 0 10px;
+}
+
+.paramPane__rampActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.paramPane__btn {
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.86);
+  cursor: pointer;
+}
+
+.paramPane__btn:hover {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+.paramPane__rampRow {
+  display: grid;
+  grid-template-columns: 18px 1fr 46px 42px 28px;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.paramPane__rampLabel {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 12px;
+}
+
+.paramPane__rampT {
+  width: 100%;
+}
+
+.paramPane__rampColor {
+  width: 42px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.paramPane__iconBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.80);
+  cursor: pointer;
+}
+
+.paramPane__hint {
+  margin-top: 10px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+}

@@ -35,8 +35,12 @@ function labelOf(kind: NodeKind) {
   if (kind === "audioIn") return "audioIn";
   if (kind === "fft") return "fft";
   if (kind === "noise") return "noise";
+  if (kind === "ramp") return "ramp";
+  if (kind === "lookup") return "lookup";
   return "output";
 }
+
+
 
 export default function NetworkEditor() {
   return (

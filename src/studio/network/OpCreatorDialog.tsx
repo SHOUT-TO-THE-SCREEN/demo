@@ -4,12 +4,20 @@ import "./opCreatorDialog.css";
 
 type OpDef = { kind: NodeKind; label: string; group: string; keywords: string[] };
 
+// OpCreatorDialog.tsx (OPS만 수정)
+
 const OPS: OpDef[] = [
   { kind: "noise", label: "Noise TOP", group: "TOP", keywords: ["noise", "top", "procedural"] },
+
+  { kind: "ramp", label: "Ramp TOP", group: "TOP", keywords: ["ramp", "lut", "gradient", "color"] },
+  { kind: "lookup", label: "Lookup TOP", group: "TOP", keywords: ["lookup", "map", "lut", "colorize"] },
+
   { kind: "fft", label: "FFT CHOP", group: "CHOP", keywords: ["fft", "spectrum", "audio"] },
   { kind: "audioIn", label: "Audio In CHOP", group: "CHOP", keywords: ["audio", "input", "mic"] },
   { kind: "output", label: "Output", group: "OUT", keywords: ["out", "output", "display"] },
 ];
+
+
 
 type Props = {
   open: boolean;
