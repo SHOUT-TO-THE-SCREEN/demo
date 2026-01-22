@@ -1,88 +1,253 @@
-.opCreatorOverlay {
+/* Overlay/Panel */
+.opCreatorOverlay{
   position: fixed;
   inset: 0;
-  z-index: 2000;
-  pointer-events: auto;
+  z-index: 9999;
 }
 
-
-.opCreatorPanel {
+.opCreatorPanel{
   position: fixed;
-    pointer-events: auto;
-  width: 320px;
+  width: 420px;
+  max-width: calc(100vw - 20px);
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(18, 18, 22, 0.96);
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 16px 60px rgba(0,0,0,0.55);
+  color: rgba(255,255,255,0.92);
+}
+
+/* Header */
+.opCreatorHeader{
+  padding: 10px 10px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+/* Search row */
+.opCreatorSearchRow{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
   border-radius: 12px;
-  background: rgba(20, 20, 24, 0.98);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.opCreatorSearchIcon{
+  opacity: 0.75;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.opCreatorInput{
+  flex: 1;
+  background: transparent;
+  border: 0;
+  outline: none;
+  color: rgba(255,255,255,0.92);
+  font-size: 13px;
+}
+
+.opCreatorInput::placeholder{
+  color: rgba(255,255,255,0.45);
+}
+
+.opCreatorClearBtn{
+  background: transparent;
+  border: 0;
+  color: rgba(255,255,255,0.65);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 8px;
+}
+.opCreatorClearBtn:hover{
+  background: rgba(255,255,255,0.08);
+}
+
+/* Tabs */
+.opCreatorTabs{
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.opCreatorTabs::-webkit-scrollbar{ height: 6px; }
+.opCreatorTabs::-webkit-scrollbar-thumb{
+  background: rgba(255,255,255,0.12);
+  border-radius: 999px;
+}
+
+.opCreatorTab{
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.78);
+  cursor: pointer;
+  user-select: none;
+}
+.opCreatorTab:hover{
+  background: rgba(255,255,255,0.07);
+}
+.opCreatorTab.active{
+  background: rgba(255,255,255,0.14);
+  border-color: rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.95);
+}
+
+.opCreatorTabLabel{
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 0.02em;
+}
+
+.opCreatorTabCount{
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.25);
+  color: rgba(255,255,255,0.70);
+}
+
+/* Hint row */
+.opCreatorHintRow{
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.opCreatorHint{
+  font-size: 11px;
+  color: rgba(255,255,255,0.55);
+}
+.opCreatorHintStrong{
+  font-size: 11px;
+  color: rgba(255,255,255,0.80);
+  font-weight: 700;
+}
+
+/* List */
+.opCreatorList{
+  max-height: 360px;
+  overflow: auto;
+}
+
+.opCreatorList::-webkit-scrollbar{ width: 10px; }
+.opCreatorList::-webkit-scrollbar-thumb{
+  background: rgba(255,255,255,0.10);
+  border-radius: 999px;
+  border: 3px solid rgba(0,0,0,0.0);
+  background-clip: content-box;
+}
+
+/* Empty */
+.opCreatorEmpty{
+  padding: 22px 14px;
+  color: rgba(255,255,255,0.70);
+}
+.opCreatorEmptyTitle{
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+.opCreatorEmptyDesc{
+  font-size: 12px;
+  color: rgba(255,255,255,0.55);
+}
+
+/* Item */
+.opCreatorItem{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  cursor: pointer;
+}
+
+.opCreatorItem:hover{
+  background: rgba(255,255,255,0.06);
+}
+
+.opCreatorItem.active{
+  background: rgba(255,255,255,0.10);
+}
+
+.opCreatorLeft{
+  min-width: 0;
+  flex: 1;
+}
+
+.opCreatorTitleLine{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.opCreatorItemLabel{
+  font-size: 13px;
+  font-weight: 850;
+  color: rgba(255,255,255,0.94);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.opCreatorPill{
+  flex: 0 0 auto;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.72);
+}
+
+.opCreatorItemSub{
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: rgba(255,255,255,0.62);
+}
+
+.opCreatorMono{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 11px;
+  color: rgba(255,255,255,0.58);
+}
+
+.opCreatorKeywords{
+  display: inline-flex;
+  gap: 6px;
+  min-width: 0;
   overflow: hidden;
 }
 
-.opCreatorHeader {
-  padding: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+.opCreatorKeyTag{
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.25);
+  color: rgba(255,255,255,0.62);
+  white-space: nowrap;
 }
 
-.opCreatorInput {
-  width: 100%;
-  padding: 10px 10px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.04);
-  color: #fff;
-  outline: none;
+.opCreatorRight{
+  flex: 0 0 auto;
+  opacity: 0.6;
 }
 
-.opCreatorList {
-  max-height: 280px;
-  overflow-y: auto;
-}
-
-.opCreatorEmpty {
-  padding: 12px;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.opCreatorItem {
-  padding: 10px 12px;
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  color: #fff;
-  user-select: none;
-}
-
-.opCreatorItem.active {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.opCreatorItemMain {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.opCreatorItemLabel {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.opCreatorItemSub {
-  font-size: 12px;
-  opacity: 0.7;
-}
-
-.opCreatorItemGroup {
-  font-size: 12px;
-  opacity: 0.75;
-  align-self: center;
-}
-.opCreatorDragBar {
-  height: 10px;
-  cursor: grab;
-  background: rgba(255, 255, 255, 0.04);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.opCreatorDragBar:active {
-  cursor: grabbing;
+.opCreatorArrow{
+  font-size: 14px;
 }

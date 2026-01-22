@@ -80,7 +80,7 @@ export default function CinematicIntro() {
         <div className="ci-heroInner">
           <div className="ci-badge">
             <span className="ci-badgeDot" />
-            v2023.10 Stable Release
+            v2026.01 Demo Release
           </div>
 
           <div className="ci-titleWrap">
