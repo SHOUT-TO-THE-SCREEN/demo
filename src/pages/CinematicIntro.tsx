@@ -2,7 +2,7 @@ import "./CinematicIntro.css";
 import { useNavigate } from "react-router-dom";
 
 export default function CinematicIntro() {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
   const goVisualizer = () => {
     navigate("/visualizer");
@@ -14,7 +14,11 @@ export default function CinematicIntro() {
         <div className="ci-navInner">
           <div className="ci-brand">
             <div className="ci-logo">
-              <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+              <svg
+                fill="none"
+                viewBox="0 0 48 48"
+                xmlns="http://www.w3.org/2000/svg"
+              >
                 <g clipPath="url(#clip0)">
                   <path
                     d="M8.57829 8.57829C5.52816 11.6284 3.451 15.5145 2.60947 19.7452C1.76794 23.9758 2.19984 28.361 3.85056 32.3462C5.50128 36.3314 8.29667 39.7376 11.8832 42.134C15.4698 44.5305 19.6865 45.8096 24 45.8096C28.3135 45.8096 32.5302 44.5305 36.1168 42.134C39.7033 39.7375 42.4987 36.3314 44.1494 32.3462C45.8002 28.361 46.2321 23.9758 45.3905 19.7452C44.549 15.5145 42.4718 11.6284 39.4217 8.57829L24 24L8.57829 8.57829Z"
@@ -33,17 +37,28 @@ export default function CinematicIntro() {
           </div>
 
           <div className="ci-links">
-            <a className="ci-link" href="#">Features</a>
-            <a className="ci-link" href="#">Showcase</a>
-            <a className="ci-link" href="#">Learn</a>
-            <a className="ci-link" href="#">Community</a>
+            <a className="ci-link" href="#">
+              Features
+            </a>
+            <a className="ci-link" href="#">
+              Showcase
+            </a>
+            <a className="ci-link" href="#">
+              Learn
+            </a>
+            <a className="ci-link" href="#">
+              Community
+            </a>
           </div>
 
           <div className="ci-actions">
-            <a className="ci-login" href="#">Log In</a>
-<button className="ci-cta" type="button" onClick={goVisualizer}>
+            <a className="ci-login" href="#">
+              Log In
+            </a>
+            <button className="ci-cta" type="button" onClick={goVisualizer}>
               GET STARTED
-            </button>          </div>
+            </button>{" "}
+          </div>
         </div>
       </nav>
 
@@ -102,7 +117,10 @@ export default function CinematicIntro() {
         <div className="ci-secTop">
           <div className="ci-secTitle">
             <h3>Selected Installations</h3>
-            <p>Immersive experiences powered by TouchDesigner in venues across the globe.</p>
+            <p>
+              Immersive experiences powered by TouchDesigner in venues across
+              the globe.
+            </p>
           </div>
 
           <a className="ci-secLink" href="#">
@@ -174,86 +192,89 @@ export default function CinematicIntro() {
         </div>
       </section>
 
-{/* PERFORMANCE SECTION */}
-<section className="perf">
-  <div className="perfInner">
-    <div className="perfGrid">
-      {/* LEFT */}
-      <div className="perfLeft">
-        <h2 className="perfTitle">
-          Power for the <br />
-          <span className="perfHighlight">High-Performance</span> Workflow
-        </h2>
+      {/* PERFORMANCE SECTION */}
+      <section className="perf">
+        <div className="perfInner">
+          <div className="perfGrid">
+            {/* LEFT */}
+            <div className="perfLeft">
+              <h2 className="perfTitle">
+                Power for the <br />
+                <span className="perfHighlight">High-Performance</span> Workflow
+              </h2>
 
-        <p className="perfDesc">
-          Harness the full power of your hardware with a node-based architecture
-          designed for interoperability and real-time creativity.
-        </p>
-
-        <div className="perfList">
-          <div className="perfItem">
-            <div className="perfIcon">⚡</div>
-            <div>
-              <h3 className="perfItemTitle">GPU Acceleration</h3>
-              <p className="perfItemText">
-                Real-time composite, 3D render, and simulation entirely on the GPU.
+              <p className="perfDesc">
+                Harness the full power of your hardware with a node-based
+                architecture designed for interoperability and real-time
+                creativity.
               </p>
-            </div>
-          </div>
 
-          <div className="perfItem">
-            <div className="perfIcon">{"</>"}</div>
-            <div>
-              <h3 className="perfItemTitle">Python Integration</h3>
-              <p className="perfItemText">
-                Extensible scripting environment for custom logic and device control.
-              </p>
-            </div>
-          </div>
+              <div className="perfList">
+                <div className="perfItem">
+                  <div className="perfIcon">⚡</div>
+                  <div>
+                    <h3 className="perfItemTitle">GPU Acceleration</h3>
+                    <p className="perfItemText">
+                      Real-time composite, 3D render, and simulation entirely on
+                      the GPU.
+                    </p>
+                  </div>
+                </div>
 
-          <div className="perfItem">
-            <div className="perfIcon">⎈</div>
-            <div>
-              <h3 className="perfItemTitle">Interoperability</h3>
-              <p className="perfItemText">
-                Support for diverse protocols: OSC, MIDI, DMX, NDI, Spout, and more.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+                <div className="perfItem">
+                  <div className="perfIcon">{"</>"}</div>
+                  <div>
+                    <h3 className="perfItemTitle">Python Integration</h3>
+                    <p className="perfItemText">
+                      Extensible scripting environment for custom logic and
+                      device control.
+                    </p>
+                  </div>
+                </div>
 
-      {/* RIGHT */}
-      <div className="perfRight">
-        <div className="perfImage">
-          <div className="perfBg" />
-
-          <div className="perfShade" />
-
-          <div className="perfStatus">
-            <div className="perfStatusTop">
-              <div className="perfStatusLeft">
-                <span className="dot" />
-                <span>System Status: Active</span>
+                <div className="perfItem">
+                  <div className="perfIcon">⎈</div>
+                  <div>
+                    <h3 className="perfItemTitle">Interoperability</h3>
+                    <p className="perfItemText">
+                      Support for diverse protocols: OSC, MIDI, DMX, NDI, Spout,
+                      and more.
+                    </p>
+                  </div>
+                </div>
               </div>
-              <span className="perfFps">FPS: 60.0</span>
             </div>
 
-            <div className="perfBar">
-              <div className="perfBarFill" />
-            </div>
+            {/* RIGHT */}
+            <div className="perfRight">
+              <div className="perfImage">
+                <div className="perfBg" />
 
-            <div className="perfStatusBottom">
-              <span>Render Time: 16.6ms</span>
-              <span>GPU: 42%</span>
+                <div className="perfShade" />
+
+                <div className="perfStatus">
+                  <div className="perfStatusTop">
+                    <div className="perfStatusLeft">
+                      <span className="dot" />
+                      <span>System Status: Active</span>
+                    </div>
+                    <span className="perfFps">FPS: 60.0</span>
+                  </div>
+
+                  <div className="perfBar">
+                    <div className="perfBarFill" />
+                  </div>
+
+                  <div className="perfStatusBottom">
+                    <span>Render Time: 16.6ms</span>
+                    <span>GPU: 42%</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
-</section>
-
+      </section>
 
       {/* FOOTER */}
       <footer className="ci-footer">
@@ -261,8 +282,8 @@ export default function CinematicIntro() {
           <div className="ci-footerBrand">
             <h3>TouchDesigner</h3>
             <p>
-              Real-time interactive multimedia content platform for artists, programmers,
-              and creative developers.
+              Real-time interactive multimedia content platform for artists,
+              programmers, and creative developers.
             </p>
           </div>
 
