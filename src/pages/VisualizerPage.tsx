@@ -8,6 +8,9 @@ import StatusBar from "../studio/panels/StaturBar";
 import { useStudioStore } from "../studio/state/studioStore";
 import React from "react";
 
+// ✅ 추가: ViewerPane
+import ViewerPane from "../studio/viewer/ViewerPane";
+
 class SafeBoundary extends React.Component<
   { children: React.ReactNode },
   { hasError: boolean; message?: string }
@@ -50,10 +53,14 @@ export default function VisualizerPage() {
           <OpLibrary />
         </aside>
 
-        <main className="tdStudio__center">
+        {/* ✅ center를 relative 컨테이너로: ViewerPane 도킹 기반 */}
+        <main className="tdStudio__center" style={{ position: "relative" }}>
           <SafeBoundary>
             <NetworkEditor />
           </SafeBoundary>
+
+          {/* ✅ Network 위에 도킹되는 메인 Viewer */}
+          <ViewerPane />
         </main>
 
         <aside className="tdStudio__right">

@@ -1,0 +1,84 @@
+.viewerPane {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  width: 520px;
+  height: 320px;
+
+  display: grid;
+  grid-template-rows: 40px 1fr;
+
+  border-radius: 14px;
+  overflow: hidden;
+
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+
+  /* MVP 도킹/리사이즈 */
+  resize: both;
+}
+
+.viewerPane__hdr {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.viewerPane__title {
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.viewerPane__meta {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.viewerPane__pill {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.viewerPane__actions {
+  display: flex;
+  gap: 6px;
+}
+
+.viewerPane__btn {
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.82);
+  cursor: pointer;
+}
+
+.viewerPane__btn.isOn {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.viewerPane__body {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.viewerPane__canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}

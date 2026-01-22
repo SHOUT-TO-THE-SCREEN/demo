@@ -27,50 +27,20 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
     return () => registerPreviewCanvas(id, null);
   }, [registerPreviewCanvas, id]);
 
-  // TDNode.tsx의 Handle 부분만 교체
-
-const k = data.kind;
-
-// lookup: in/lut/out
-{k === "lookup" && (
-  <>
-    <Handle id="in" type="target" position={Position.Left} className="tdHandle tdHandle--in" style={{ top: "38%" }} />
-    <Handle id="lut" type="target" position={Position.Left} className="tdHandle tdHandle--in" style={{ top: "72%" }} />
-    <Handle id="out" type="source" position={Position.Right} className="tdHandle tdHandle--out" />
-  </>
-)}
-
-// noise, ramp: out
-{(k === "noise" || k === "ramp") && (
-  <Handle id="out" type="source" position={Position.Right} className="tdHandle tdHandle--out" />
-)}
-
-// output: in
-{k === "output" && (
-  <Handle id="in" type="target" position={Position.Left} className="tdHandle tdHandle--in" />
-)}
-
-// audioIn/fft: 기존처럼 좌/우 1개씩 쓰려면 id만 붙여도 됨
-{(k === "audioIn" || k === "fft") && (
-  <>
-    <Handle id="in" type="target" position={Position.Left} className="tdHandle tdHandle--in" />
-    <Handle id="out" type="source" position={Position.Right} className="tdHandle tdHandle--out" />
-  </>
-)}
-
+  const k = data.kind;
 
   return (
     <div className={`tdNode ${selected ? "tdNode--selected" : ""}`}>
       <div className="tdNode__hdr">
         <div className="tdNode__title">{data.label}</div>
-        <div className="tdNode__tag">{data.kind}</div>
+        <div className="tdNode__tag">{k}</div>
       </div>
 
       <div className="tdNode__thumb">
         <canvas ref={canvasRef} className="tdNode__canvas" />
       </div>
 
-      {/* ===== Inputs ===== */}
+      {/* Inputs */}
       {k === "lookup" && (
         <>
           <Handle
@@ -90,12 +60,12 @@ const k = data.kind;
         </>
       )}
 
-      {k === "output" && (
+      {(k === "fft" || k === "output") && (
         <Handle id="in" type="target" position={Position.Left} className="tdHandle tdHandle--in" />
       )}
 
-      {/* ===== Outputs ===== */}
-      {(k === "noise" || k === "ramp" || k === "lookup") && (
+      {/* Outputs */}
+      {(k === "audioIn" || k === "fft" || k === "noise" || k === "ramp" || k === "lookup") && (
         <Handle id="out" type="source" position={Position.Right} className="tdHandle tdHandle--out" />
       )}
     </div>

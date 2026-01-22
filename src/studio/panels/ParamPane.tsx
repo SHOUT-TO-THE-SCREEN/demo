@@ -1,18 +1,23 @@
 import "./paramPane.css";
-import { useMemo } from "react";
 import { useStudioStore } from "../state/studioStore";
 import type { RampStop, RampParams } from "../state/studioStore";
+
+type Props = {
+  nodeId?: string | null;
+};
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 const uid = () => Math.random().toString(36).slice(2);
 
-export default function ParamPane() {
-  const selectedNodeId = useStudioStore((s) => s.selectedNodeId);
-  const kind = useStudioStore((s) => (selectedNodeId ? s.nodeKindById[selectedNodeId] : null));
-  const params = useStudioStore((s) => (selectedNodeId ? s.paramsById[selectedNodeId] : null));
+export default function ParamPane({ nodeId }: Props) {
+  const selectedFromStore = useStudioStore((s) => s.selectedNodeId);
+  const effectiveId = nodeId ?? selectedFromStore;
+
+  const kind = useStudioStore((s) => (effectiveId ? s.nodeKindById[effectiveId] : null));
+  const params = useStudioStore((s) => (effectiveId ? s.paramsById[effectiveId] : null));
   const setParam = useStudioStore((s) => s.setParam);
 
-  if (!selectedNodeId || !kind) {
+  if (!effectiveId || !kind) {
     return (
       <aside className="paramPane">
         <div className="paramPane__title">Parameters</div>
@@ -21,7 +26,6 @@ export default function ParamPane() {
     );
   }
 
-  // === NOISE ===
   if (kind === "noise") {
     const p =
       params && params.kind === "noise"
@@ -37,7 +41,7 @@ export default function ParamPane() {
             className="paramPane__input"
             type="number"
             value={p.seed}
-            onChange={(e) => setParam(selectedNodeId, "noise", { seed: Number(e.target.value) || 0 })}
+            onChange={(e) => setParam(effectiveId, "noise", { seed: Number(e.target.value) || 0 })}
           />
         </Row>
 
@@ -48,7 +52,7 @@ export default function ParamPane() {
             max={80}
             step={1}
             value={p.scale}
-            onChange={(e) => setParam(selectedNodeId, "noise", { scale: Number(e.target.value) })}
+            onChange={(e) => setParam(effectiveId, "noise", { scale: Number(e.target.value) })}
           />
           <span className="paramPane__value">{p.scale}</span>
         </Row>
@@ -60,7 +64,7 @@ export default function ParamPane() {
             max={3}
             step={0.01}
             value={p.speed}
-            onChange={(e) => setParam(selectedNodeId, "noise", { speed: Number(e.target.value) })}
+            onChange={(e) => setParam(effectiveId, "noise", { speed: Number(e.target.value) })}
           />
           <span className="paramPane__value">{p.speed.toFixed(2)}</span>
         </Row>
@@ -72,7 +76,7 @@ export default function ParamPane() {
             max={2.5}
             step={0.01}
             value={p.contrast}
-            onChange={(e) => setParam(selectedNodeId, "noise", { contrast: Number(e.target.value) })}
+            onChange={(e) => setParam(effectiveId, "noise", { contrast: Number(e.target.value) })}
           />
           <span className="paramPane__value">{p.contrast.toFixed(2)}</span>
         </Row>
@@ -80,7 +84,6 @@ export default function ParamPane() {
     );
   }
 
-  // === RAMP ===
   if (kind === "ramp") {
     const p: RampParams =
       params && params.kind === "ramp"
@@ -95,28 +98,24 @@ export default function ParamPane() {
             ],
           };
 
-    const stopsSorted = useMemo(
-      () => [...p.stops].sort((a, b) => a.t - b.t),
-      [p.stops]
-    );
-
+    const stopsSorted = [...p.stops].sort((a, b) => a.t - b.t);
     const gradientCss = `linear-gradient(90deg, ${stopsSorted
       .map((s) => `${s.color} ${Math.round(s.t * 100)}%`)
       .join(", ")})`;
 
     const updateStop = (id: string, patch: Partial<RampStop>) => {
       const nextStops = p.stops.map((s) => (s.id === id ? { ...s, ...patch } : s));
-      setParam(selectedNodeId, "ramp", { stops: nextStops });
+      setParam(effectiveId, "ramp", { stops: nextStops });
     };
 
     const addStop = () => {
       const next: RampStop = { id: uid(), t: 0.5, color: "#ff8a00" };
-      setParam(selectedNodeId, "ramp", { stops: [...p.stops, next] });
+      setParam(effectiveId, "ramp", { stops: [...p.stops, next] });
     };
 
     const removeStop = (id: string) => {
       if (p.stops.length <= 2) return;
-      setParam(selectedNodeId, "ramp", { stops: p.stops.filter((s) => s.id !== id) });
+      setParam(effectiveId, "ramp", { stops: p.stops.filter((s) => s.id !== id) });
     };
 
     return (
@@ -159,7 +158,6 @@ export default function ParamPane() {
     );
   }
 
-  // === LOOKUP ===
   if (kind === "lookup") {
     const p = params && params.kind === "lookup" ? params : { kind: "lookup" as const, invert: false };
 
@@ -171,7 +169,7 @@ export default function ParamPane() {
           <input
             type="checkbox"
             checked={p.invert}
-            onChange={(e) => setParam(selectedNodeId, "lookup", { invert: e.target.checked })}
+            onChange={(e) => setParam(effectiveId, "lookup", { invert: e.target.checked })}
           />
         </Row>
 
@@ -180,7 +178,6 @@ export default function ParamPane() {
     );
   }
 
-  // === OUTPUT ===
   if (kind === "output") {
     const p = params && params.kind === "output" ? params : { kind: "output" as const, exposure: 1 };
 
@@ -195,7 +192,7 @@ export default function ParamPane() {
             max={3}
             step={0.01}
             value={p.exposure}
-            onChange={(e) => setParam(selectedNodeId, "output", { exposure: Number(e.target.value) })}
+            onChange={(e) => setParam(effectiveId, "output", { exposure: Number(e.target.value) })}
           />
           <span className="paramPane__value">{p.exposure.toFixed(2)}</span>
         </Row>
