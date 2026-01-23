@@ -18,7 +18,9 @@ export type ViewerMode = "fit" | "fill" | "1:1";
 type SpawnImpl = ((kind: NodeKind, clientX?: number, clientY?: number) => void) | null;
 
 type StudioState = {
+  // ✅ selection
   selectedNodeId: string | null;
+  selectedNodeIds: string[]; // multi-select ids
 
   // ===== Viewer (전역) =====
   viewerEnabled: boolean;
@@ -27,8 +29,8 @@ type StudioState = {
   viewerPinnedNodeId: string | null;
 
   // ✅ TD-style flags
-  viewerNodeId: string | null;   // Viewer Flag (V)
-  displayNodeId: string | null;  // Display Flag (D)
+  viewerNodeId: string | null; // Viewer Flag (V)
+  displayNodeId: string | null; // Display Flag (D)
   bypassByNodeId: Record<string, boolean>; // Bypass Flag (B)
 
   viewerMode: ViewerMode;
@@ -62,7 +64,11 @@ type StudioState = {
   paramsById: Record<string, NodeParams>;
   previewCanvasByNodeId: Record<string, HTMLCanvasElement | null>;
 
+  // ✅ selection actions
   setSelectedNodeId: (id: string | null) => void;
+  setSelectedNodeIds: (ids: string[]) => void;
+  clearSelection: () => void;
+
   setNodeKind: (id: string, kind: NodeKind) => void;
   ensureNodeParams: (id: string, kind: NodeKind) => void;
 
@@ -98,7 +104,9 @@ function defaultParams(kind: NodeKind): NodeParams {
 }
 
 export const useStudioStore = create<StudioState>((set, get) => ({
+  // selection defaults
   selectedNodeId: null,
+  selectedNodeIds: [],
 
   // Viewer defaults
   viewerEnabled: true,
@@ -151,7 +159,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   paramsById: {},
   previewCanvasByNodeId: {},
 
+  // ✅ selection actions
   setSelectedNodeId: (id) => set({ selectedNodeId: id }),
+  setSelectedNodeIds: (ids) => set({ selectedNodeIds: ids, selectedNodeId: ids[0] ?? null }),
+  clearSelection: () => set({ selectedNodeIds: [], selectedNodeId: null }),
 
   setNodeKind: (id, kind) =>
     set((s) => ({

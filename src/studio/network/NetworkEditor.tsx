@@ -3,13 +3,20 @@ import ReactFlow, {
   Background,
   Controls,
   MiniMap,
-  addEdge,
   ReactFlowProvider,
-  useEdgesState,
-  useNodesState,
+  addEdge,
+  applyEdgeChanges,
+  applyNodeChanges,
   useReactFlow,
 } from "reactflow";
-import type { Connection, Edge, Node } from "reactflow";
+import type {
+  Connection,
+  Edge,
+  Node,
+  EdgeChange,
+  NodeChange,
+  OnSelectionChangeParams,
+} from "reactflow";
 
 import "reactflow/dist/style.css";
 import "./network.css";
@@ -40,7 +47,15 @@ function labelOf(kind: NodeKind) {
   return "output";
 }
 
+type GraphSnap = { nodes: TDNodeType[]; edges: TDEdgeType[] };
 
+function cloneSnap(s: GraphSnap): GraphSnap {
+  // nodes/edges는 plain object라 structuredClone 가능 환경이면 그걸 쓰고,
+  // 아니면 JSON clone로 충분합니다.
+  const sc = (globalThis as any).structuredClone as undefined | ((v: any) => any);
+  if (typeof sc === "function") return sc(s);
+  return JSON.parse(JSON.stringify(s)) as GraphSnap;
+}
 
 export default function NetworkEditor() {
   return (
@@ -52,6 +67,9 @@ export default function NetworkEditor() {
 
 function NetworkEditorInner() {
   const setSelectedNodeId = useStudioStore((s) => s.setSelectedNodeId);
+  const setSelectedNodeIds = useStudioStore((s) => s.setSelectedNodeIds);
+  const clearSelection = useStudioStore((s) => s.clearSelection);
+
   const setNodeKind = useStudioStore((s) => s.setNodeKind);
   const ensureNodeParams = useStudioStore((s) => s.ensureNodeParams);
 
@@ -75,13 +93,56 @@ function NetworkEditorInner() {
     []
   );
 
-  const [nodes, setNodes, onNodesChange] = useNodesState<TDNodeData>(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<TDEdgeType>(initialEdges);
+  const [nodes, setNodes] = useState<TDNodeType[]>(initialNodes);
+  const [edges, setEdges] = useState<TDEdgeType[]>(initialEdges);
 
   const rf = useReactFlow();
   const wrapperRef = useRef<HTMLDivElement | null>(null);
 
-  // === OP Creator state ===
+  // ===== Undo stacks =====
+  const pastRef = useRef<GraphSnap[]>([]);
+  const futureRef = useRef<GraphSnap[]>([]);
+
+  const pushHistory = useCallback(() => {
+    pastRef.current.push(
+      cloneSnap({
+        nodes,
+        edges,
+      })
+    );
+    futureRef.current = [];
+  }, [nodes, edges]);
+
+  const undo = useCallback(() => {
+    const past = pastRef.current;
+    if (past.length === 0) return;
+
+    const cur = cloneSnap({ nodes, edges });
+    const prev = past.pop()!;
+
+    futureRef.current.push(cur);
+    setNodes(prev.nodes);
+    setEdges(prev.edges);
+
+    // selection 정리
+    clearSelection();
+  }, [nodes, edges, clearSelection]);
+
+  const redo = useCallback(() => {
+    const fut = futureRef.current;
+    if (fut.length === 0) return;
+
+    const cur = cloneSnap({ nodes, edges });
+    const next = fut.pop()!;
+
+    pastRef.current.push(cur);
+    setNodes(next.nodes);
+    setEdges(next.edges);
+
+    clearSelection();
+  }, [nodes, edges, clearSelection]);
+
+  // ===== OP Creator state =====
   const [opOpen, setOpOpen] = useState(false);
   const [opAnchor, setOpAnchor] = useState<{ x: number; y: number } | null>(null);
   const [opQuery, setOpQuery] = useState("");
@@ -109,19 +170,62 @@ function NetworkEditorInner() {
     });
   }, [initialNodes, setNodeKind, ensureNodeParams]);
 
+  // ===== ReactFlow change handlers (Undo-friendly) =====
+  const onNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      // 드래그 중간에는 히스토리 누적하지 않고, drag end 시점에만 push
+      const shouldPush =
+        changes.some((c: any) => c.type === "remove") ||
+        changes.some((c: any) => c.type === "add") ||
+        changes.some((c: any) => c.type === "position" && c.dragging === false);
+
+      if (shouldPush) pushHistory();
+
+      setNodes((ns) => applyNodeChanges(changes, ns));
+    },
+    [pushHistory]
+  );
+
+  const onEdgesChange = useCallback(
+    (changes: EdgeChange[]) => {
+      const shouldPush = changes.some((c: any) => c.type === "remove") || changes.some((c: any) => c.type === "add");
+      if (shouldPush) pushHistory();
+
+      setEdges((es) => applyEdgeChanges(changes, es));
+    },
+    [pushHistory]
+  );
+
   const onConnect = useCallback(
-    (c: Connection) => setEdges((eds: TDEdgeType[]) => addEdge({ ...c, animated: true }, eds)),
-    [setEdges]
+    (c: Connection) => {
+      pushHistory();
+      setEdges((eds) => addEdge({ ...c, animated: true }, eds));
+    },
+    [pushHistory]
   );
 
   const onNodeClick = useCallback(
-    (_: React.MouseEvent, node: TDNodeType) => setSelectedNodeId(node.id),
-    [setSelectedNodeId]
+    (_: React.MouseEvent, node: TDNodeType) => {
+      setSelectedNodeId(node.id);
+      setSelectedNodeIds([node.id]);
+    },
+    [setSelectedNodeId, setSelectedNodeIds]
+  );
+
+  const onSelectionChange = useCallback(
+    (p: OnSelectionChangeParams) => {
+      const ids = (p.nodes ?? []).map((n) => n.id);
+      setSelectedNodeIds(ids);
+      if (ids.length === 0) setSelectedNodeId(null);
+    },
+    [setSelectedNodeIds, setSelectedNodeId]
   );
 
   // 외부(spawnNode)에서 생성 가능하도록 impl 등록
   useEffect(() => {
     const impl = (kind: NodeKind, clientX?: number, clientY?: number) => {
+      pushHistory();
+
       const id = makeId(kind);
 
       let pos = { x: 220, y: 180 };
@@ -137,17 +241,19 @@ function NetworkEditorInner() {
         data: { label: labelOf(kind), kind },
       };
 
-      setNodes((ns: TDNodeType[]) => ns.concat(newNode));
+      setNodes((ns) => ns.concat(newNode));
       setNodeKind(id, kind);
       ensureNodeParams(id, kind);
+
       setSelectedNodeId(id);
+      setSelectedNodeIds([id]);
     };
 
     setSpawnImpl(impl);
     return () => setSpawnImpl(null);
-  }, [rf, setNodes, setNodeKind, ensureNodeParams, setSelectedNodeId, setSpawnImpl]);
+  }, [rf, pushHistory, setNodes, setNodeKind, ensureNodeParams, setSelectedNodeId, setSelectedNodeIds, setSpawnImpl]);
 
-  // === Pane double click (버전 호환) ===
+  // ===== Pane double click (버전 호환) =====
   const lastPaneClickRef = useRef<number>(0);
   const DBL_MS = 280;
 
@@ -159,9 +265,12 @@ function NetworkEditorInner() {
 
       if (dt < DBL_MS) {
         openOpCreator(e.clientX, e.clientY);
+      } else {
+        // 빈 공간 클릭 시 selection 해제
+        clearSelection();
       }
     },
-    [openOpCreator]
+    [openOpCreator, clearSelection]
   );
 
   // Drag & Drop 생성
@@ -179,6 +288,8 @@ function NetworkEditorInner() {
       const rect = wrapperRef.current?.getBoundingClientRect();
       if (!rect) return;
 
+      pushHistory();
+
       const pos = rf.screenToFlowPosition({ x: e.clientX - rect.left, y: e.clientY - rect.top });
       const id = makeId(kind);
 
@@ -189,13 +300,59 @@ function NetworkEditorInner() {
         data: { label: labelOf(kind), kind },
       };
 
-      setNodes((ns: TDNodeType[]) => ns.concat(newNode));
+      setNodes((ns) => ns.concat(newNode));
       setNodeKind(id, kind);
       ensureNodeParams(id, kind);
+
       setSelectedNodeId(id);
+      setSelectedNodeIds([id]);
     },
-    [rf, setNodes, setNodeKind, ensureNodeParams, setSelectedNodeId]
+    [rf, pushHistory, setNodes, setNodeKind, ensureNodeParams, setSelectedNodeId, setSelectedNodeIds]
   );
+
+  // ===== Delete & Undo keyboard =====
+  const deleteSelection = useCallback(() => {
+    const ids = useStudioStore.getState().selectedNodeIds;
+    if (!ids || ids.length === 0) return;
+
+    pushHistory();
+
+    setNodes((ns) => ns.filter((n) => !ids.includes(n.id)));
+    setEdges((es) => es.filter((e) => !ids.includes(e.source) && !ids.includes(e.target)));
+
+    clearSelection();
+  }, [pushHistory, clearSelection]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName?.toLowerCase();
+      const isTyping =
+        tag === "input" || tag === "textarea" || (e.target as HTMLElement | null)?.getAttribute?.("contenteditable") === "true";
+      if (isTyping) return;
+
+      // delete
+      if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+        deleteSelection();
+        return;
+      }
+
+      // undo / redo
+      if (e.ctrlKey && !e.shiftKey && (e.key === "z" || e.key === "Z")) {
+        e.preventDefault();
+        undo();
+        return;
+      }
+      if (e.ctrlKey && (e.key === "y" || e.key === "Y" || (e.shiftKey && (e.key === "z" || e.key === "Z")))) {
+        e.preventDefault();
+        redo();
+        return;
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [deleteSelection, undo, redo]);
 
   // 썸네일 렌더 런타임
   usePreviewRuntime(nodes, edges);
@@ -212,9 +369,11 @@ function NetworkEditorInner() {
         onEdgesChange={onEdgesChange}
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
+        onSelectionChange={onSelectionChange}
         onDragOver={onDragOver}
         onDrop={onDrop}
         zoomOnDoubleClick={false}
+        // 기본 박스 드래그 다중선택(ReactFlow 기본) 사용
       >
         <Background gap={18} size={1} />
         <MiniMap pannable zoomable />
