@@ -8,7 +8,7 @@ import StatusBar from "../studio/panels/StaturBar";
 import { useStudioStore } from "../studio/state/studioStore";
 import React from "react";
 
-// ✅ 추가: ViewerPane
+// ✅ Background Viewer
 import ViewerPane from "../studio/viewer/ViewerPane";
 
 class SafeBoundary extends React.Component<
@@ -31,9 +31,7 @@ class SafeBoundary extends React.Component<
         <div style={{ padding: 16, color: "white" }}>
           <div style={{ fontWeight: 700, marginBottom: 8 }}>Visualizer crashed</div>
           <div style={{ opacity: 0.8 }}>{this.state.message}</div>
-          <div style={{ opacity: 0.6, marginTop: 8 }}>
-            콘솔(F12) 에러 로그를 확인하세요.
-          </div>
+          <div style={{ opacity: 0.6, marginTop: 8 }}>콘솔(F12) 에러 로그를 확인하세요.</div>
         </div>
       );
     }
@@ -53,14 +51,16 @@ export default function VisualizerPage() {
           <OpLibrary />
         </aside>
 
-        {/* ✅ center를 relative 컨테이너로: ViewerPane 도킹 기반 */}
-        <main className="tdStudio__center" style={{ position: "relative" }}>
-          <SafeBoundary>
-            <NetworkEditor />
-          </SafeBoundary>
-
-          {/* ✅ Network 위에 도킹되는 메인 Viewer */}
+        <main className="tdStudio__center">
+          {/* ✅ Background layer: ViewerPane */}
           <ViewerPane />
+
+          {/* ✅ Foreground layer: NetworkEditor */}
+          <div className="tdStudio__networkLayer">
+            <SafeBoundary>
+              <NetworkEditor />
+            </SafeBoundary>
+          </div>
         </main>
 
         <aside className="tdStudio__right">

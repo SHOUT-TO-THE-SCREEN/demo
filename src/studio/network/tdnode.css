@@ -44,3 +44,59 @@
   height: 100%;
   display: block;
 }
+/* ✅ 헤더 좌/우 정렬 */
+.tdNode__hdr{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 10px 8px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.tdNode__hdrLeft{
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.tdNode__flags{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tdNode__flagBtn{
+  width: 26px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.78);
+
+  cursor: pointer;
+  user-select: none;
+  line-height: 1;
+  font-size: 12px;
+
+  transition: background 120ms ease, border-color 120ms ease, transform 80ms ease;
+}
+
+.tdNode__flagBtn:hover{
+  background: rgba(255,255,255,0.08);
+}
+
+.tdNode__flagBtn:active{
+  transform: translateY(1px);
+}
+
+.tdNode__flagBtn.isOn{
+  background: rgba(120,255,220,0.14);
+  border-color: rgba(120,255,220,0.35);
+  color: rgba(210,255,240,0.95);
+}
