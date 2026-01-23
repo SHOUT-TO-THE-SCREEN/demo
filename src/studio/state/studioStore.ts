@@ -20,13 +20,14 @@ type SpawnImpl = ((kind: NodeKind, clientX?: number, clientY?: number) => void) 
 type StudioState = {
   selectedNodeId: string | null;
 
-  // ===== Viewer state (정식) =====
+  // ===== Viewer (정식) =====
   viewerEnabled: boolean;
   viewerPinnedNodeId: string | null;
   viewerMode: ViewerMode;
   viewerOpacity: number; // 0~1
   viewerFps: number;
 
+  setViewerEnabled: (v: boolean) => void;
   toggleViewer: () => void;
   pinViewerToNode: (nodeId: string) => void;
   unpinViewer: () => void;
@@ -39,7 +40,6 @@ type StudioState = {
   previewCanvasByNodeId: Record<string, HTMLCanvasElement | null>;
 
   setSelectedNodeId: (id: string | null) => void;
-
   setNodeKind: (id: string, kind: NodeKind) => void;
   ensureNodeParams: (id: string, kind: NodeKind) => void;
 
@@ -84,6 +84,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   viewerOpacity: 0.22,
   viewerFps: 0,
 
+  setViewerEnabled: (v) => set({ viewerEnabled: v }),
   toggleViewer: () => set((s) => ({ viewerEnabled: !s.viewerEnabled })),
   pinViewerToNode: (nodeId) => set({ viewerPinnedNodeId: nodeId }),
   unpinViewer: () => set({ viewerPinnedNodeId: null }),
