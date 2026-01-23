@@ -23,3 +23,9 @@
   border: 1px solid rgba(255,255,255,0.08);
 }
 
+.tdNet.isPanning {
+  cursor: grab;
+}
+.tdNet.isPanning:active {
+  cursor: grabbing;
+}

@@ -52,7 +52,9 @@ type GraphSnap = { nodes: TDNodeType[]; edges: TDEdgeType[] };
 function cloneSnap(s: GraphSnap): GraphSnap {
   // nodes/edges는 plain object라 structuredClone 가능 환경이면 그걸 쓰고,
   // 아니면 JSON clone로 충분합니다.
-  const sc = (globalThis as any).structuredClone as undefined | ((v: any) => any);
+  const sc = (globalThis as any).structuredClone as
+    | undefined
+    | ((v: any) => any);
   if (typeof sc === "function") return sc(s);
   return JSON.parse(JSON.stringify(s)) as GraphSnap;
 }
@@ -75,14 +77,30 @@ function NetworkEditorInner() {
 
   const setSpawnImpl = useStudioStore((s) => s.setSpawnImpl);
   const spawnNode = useStudioStore((s) => s.spawnNode);
+  const [spaceDown, setSpaceDown] = useState(false);
 
   const initialNodes: TDNodeType[] = useMemo(
     () => [
-      { id: "audio", type: "td", position: { x: 80, y: 120 }, data: { label: "audioIn", kind: "audioIn" } },
-      { id: "fft", type: "td", position: { x: 420, y: 120 }, data: { label: "fft", kind: "fft" } },
-      { id: "out", type: "td", position: { x: 760, y: 120 }, data: { label: "output", kind: "output" } },
+      {
+        id: "audio",
+        type: "td",
+        position: { x: 80, y: 120 },
+        data: { label: "audioIn", kind: "audioIn" },
+      },
+      {
+        id: "fft",
+        type: "td",
+        position: { x: 420, y: 120 },
+        data: { label: "fft", kind: "fft" },
+      },
+      {
+        id: "out",
+        type: "td",
+        position: { x: 760, y: 120 },
+        data: { label: "output", kind: "output" },
+      },
     ],
-    []
+    [],
   );
 
   const initialEdges: TDEdgeType[] = useMemo(
@@ -90,7 +108,7 @@ function NetworkEditorInner() {
       { id: "e1", source: "audio", target: "fft", animated: true },
       { id: "e2", source: "fft", target: "out", animated: true },
     ],
-    []
+    [],
   );
 
   const [nodes, setNodes] = useState<TDNodeType[]>(initialNodes);
@@ -108,7 +126,7 @@ function NetworkEditorInner() {
       cloneSnap({
         nodes,
         edges,
-      })
+      }),
     );
     futureRef.current = [];
   }, [nodes, edges]);
@@ -144,7 +162,9 @@ function NetworkEditorInner() {
 
   // ===== OP Creator state =====
   const [opOpen, setOpOpen] = useState(false);
-  const [opAnchor, setOpAnchor] = useState<{ x: number; y: number } | null>(null);
+  const [opAnchor, setOpAnchor] = useState<{ x: number; y: number } | null>(
+    null,
+  );
   const [opQuery, setOpQuery] = useState("");
   const [opSel, setOpSel] = useState(0);
 
@@ -183,17 +203,19 @@ function NetworkEditorInner() {
 
       setNodes((ns) => applyNodeChanges(changes, ns));
     },
-    [pushHistory]
+    [pushHistory],
   );
 
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) => {
-      const shouldPush = changes.some((c: any) => c.type === "remove") || changes.some((c: any) => c.type === "add");
+      const shouldPush =
+        changes.some((c: any) => c.type === "remove") ||
+        changes.some((c: any) => c.type === "add");
       if (shouldPush) pushHistory();
 
       setEdges((es) => applyEdgeChanges(changes, es));
     },
-    [pushHistory]
+    [pushHistory],
   );
 
   const onConnect = useCallback(
@@ -201,7 +223,7 @@ function NetworkEditorInner() {
       pushHistory();
       setEdges((eds) => addEdge({ ...c, animated: true }, eds));
     },
-    [pushHistory]
+    [pushHistory],
   );
 
   const onNodeClick = useCallback(
@@ -209,7 +231,7 @@ function NetworkEditorInner() {
       setSelectedNodeId(node.id);
       setSelectedNodeIds([node.id]);
     },
-    [setSelectedNodeId, setSelectedNodeIds]
+    [setSelectedNodeId, setSelectedNodeIds],
   );
 
   const onSelectionChange = useCallback(
@@ -218,7 +240,7 @@ function NetworkEditorInner() {
       setSelectedNodeIds(ids);
       if (ids.length === 0) setSelectedNodeId(null);
     },
-    [setSelectedNodeIds, setSelectedNodeId]
+    [setSelectedNodeIds, setSelectedNodeId],
   );
 
   // 외부(spawnNode)에서 생성 가능하도록 impl 등록
@@ -229,9 +251,16 @@ function NetworkEditorInner() {
       const id = makeId(kind);
 
       let pos = { x: 220, y: 180 };
-      if (wrapperRef.current && typeof clientX === "number" && typeof clientY === "number") {
+      if (
+        wrapperRef.current &&
+        typeof clientX === "number" &&
+        typeof clientY === "number"
+      ) {
         const rect = wrapperRef.current.getBoundingClientRect();
-        pos = rf.screenToFlowPosition({ x: clientX - rect.left, y: clientY - rect.top });
+        pos = rf.screenToFlowPosition({
+          x: clientX - rect.left,
+          y: clientY - rect.top,
+        });
       }
 
       const newNode: TDNodeType = {
@@ -251,7 +280,16 @@ function NetworkEditorInner() {
 
     setSpawnImpl(impl);
     return () => setSpawnImpl(null);
-  }, [rf, pushHistory, setNodes, setNodeKind, ensureNodeParams, setSelectedNodeId, setSelectedNodeIds, setSpawnImpl]);
+  }, [
+    rf,
+    pushHistory,
+    setNodes,
+    setNodeKind,
+    ensureNodeParams,
+    setSelectedNodeId,
+    setSelectedNodeIds,
+    setSpawnImpl,
+  ]);
 
   // ===== Pane double click (버전 호환) =====
   const lastPaneClickRef = useRef<number>(0);
@@ -270,7 +308,7 @@ function NetworkEditorInner() {
         clearSelection();
       }
     },
-    [openOpCreator, clearSelection]
+    [openOpCreator, clearSelection],
   );
 
   // Drag & Drop 생성
@@ -290,7 +328,10 @@ function NetworkEditorInner() {
 
       pushHistory();
 
-      const pos = rf.screenToFlowPosition({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+      const pos = rf.screenToFlowPosition({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      });
       const id = makeId(kind);
 
       const newNode: TDNodeType = {
@@ -307,7 +348,15 @@ function NetworkEditorInner() {
       setSelectedNodeId(id);
       setSelectedNodeIds([id]);
     },
-    [rf, pushHistory, setNodes, setNodeKind, ensureNodeParams, setSelectedNodeId, setSelectedNodeIds]
+    [
+      rf,
+      pushHistory,
+      setNodes,
+      setNodeKind,
+      ensureNodeParams,
+      setSelectedNodeId,
+      setSelectedNodeIds,
+    ],
   );
 
   // ===== Delete & Undo keyboard =====
@@ -318,7 +367,9 @@ function NetworkEditorInner() {
     pushHistory();
 
     setNodes((ns) => ns.filter((n) => !ids.includes(n.id)));
-    setEdges((es) => es.filter((e) => !ids.includes(e.source) && !ids.includes(e.target)));
+    setEdges((es) =>
+      es.filter((e) => !ids.includes(e.source) && !ids.includes(e.target)),
+    );
 
     clearSelection();
   }, [pushHistory, clearSelection]);
@@ -327,8 +378,18 @@ function NetworkEditorInner() {
     const onKeyDown = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement | null)?.tagName?.toLowerCase();
       const isTyping =
-        tag === "input" || tag === "textarea" || (e.target as HTMLElement | null)?.getAttribute?.("contenteditable") === "true";
+        tag === "input" ||
+        tag === "textarea" ||
+        (e.target as HTMLElement | null)?.getAttribute?.("contenteditable") ===
+          "true";
       if (isTyping) return;
+
+      // ✅ TD: Space = Pan 모드 (스크롤 방지)
+      if (e.code === "Space") {
+        e.preventDefault();
+        setSpaceDown(true);
+        return;
+      }
 
       // delete
       if (e.key === "Delete" || e.key === "Backspace") {
@@ -343,22 +404,38 @@ function NetworkEditorInner() {
         undo();
         return;
       }
-      if (e.ctrlKey && (e.key === "y" || e.key === "Y" || (e.shiftKey && (e.key === "z" || e.key === "Z")))) {
+      if (
+        e.ctrlKey &&
+        (e.key === "y" ||
+          e.key === "Y" ||
+          (e.shiftKey && (e.key === "z" || e.key === "Z")))
+      ) {
         e.preventDefault();
         redo();
         return;
       }
     };
 
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        setSpaceDown(false);
+      }
+    };
+
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+    };
   }, [deleteSelection, undo, redo]);
 
   // 썸네일 렌더 런타임
   usePreviewRuntime(nodes, edges);
 
   return (
-    <div className="tdNet" ref={wrapperRef}>
+    <div className={`tdNet ${spaceDown ? "isPanning" : ""}`} ref={wrapperRef}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -372,7 +449,10 @@ function NetworkEditorInner() {
         onSelectionChange={onSelectionChange}
         onDragOver={onDragOver}
         onDrop={onDrop}
+        selectionOnDrag={!spaceDown} // Space 아닐 때만 박스 선택
+        panOnDrag={spaceDown ? [0] : [1, 2]} // Space면 좌드래그 Pan, 아니면 중/우로 Pan
         zoomOnDoubleClick={false}
+        panOnScroll={false}
         // 기본 박스 드래그 다중선택(ReactFlow 기본) 사용
       >
         <Background gap={18} size={1} />
