@@ -12,6 +12,22 @@
   height: 100%;
   display: block;
 }
+.viewerBackdrop--bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none; /* ✅ 배경 캔버스는 클릭을 막지 않음 */
+  z-index: 0;
+}
+
+/* HUD는 네트워크 위 + 클릭 가능 */
+.viewerBackdrop--hud {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  pointer-events: auto;
+  z-index: 50;
+  width: max-content;
+}
 
 /* 끄면 완전히 제거 */
 .viewerBackdrop.isOff {

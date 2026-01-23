@@ -52,16 +52,21 @@ export default function VisualizerPage() {
         </aside>
 
         <main className="tdStudio__center">
-          {/* ✅ Background layer: ViewerPane */}
-          <ViewerPane />
+  {/* Background canvas (네트워크 뒤) */}
+  <ViewerPane placement="background" />
 
-          {/* ✅ Foreground layer: NetworkEditor */}
-          <div className="tdStudio__networkLayer">
-            <SafeBoundary>
-              <NetworkEditor />
-            </SafeBoundary>
-          </div>
-        </main>
+  {/* Network (위) */}
+  <div className="tdStudio__networkLayer">
+    <SafeBoundary>
+      <NetworkEditor />
+    </SafeBoundary>
+  </div>
+
+  {/* HUD (네트워크 위, 클릭/키보드 담당) */}
+  <ViewerPane placement="hud" />
+</main>
+
+
 
         <aside className="tdStudio__right">
           <ParamPane nodeId={selectedNodeId} />

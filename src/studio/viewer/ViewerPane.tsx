@@ -1,31 +1,33 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import "./viewerPane.css";
 import { useStudioStore } from "../state/studioStore";
+import type { ViewerMode } from "../state/studioStore";
 
-type Mode = "fit" | "fill" | "1:1";
+type Props = {
+  placement?: "background" | "hud";
+};
 
-/**
- * TouchDesigner 스타일:
- * - 별도 패널을 띄우지 않고, Studio 배경에 은은한 프리뷰를 깐다.
- * - 어떤 노드를 보여줄지는 "핀(pinned)" 또는 "선택(selected)" 기준으로 정한다.
- * - On/Off는 store의 viewerEnabled로 제어한다.
- */
-export default function ViewerPane() {
+export default function ViewerPane({ placement = "background" }: Props) {
   const selectedNodeId = useStudioStore((s) => s.selectedNodeId);
   const nodeKindById = useStudioStore((s) => s.nodeKindById);
   const previewCanvasByNodeId = useStudioStore((s) => s.previewCanvasByNodeId);
 
-  // ✅ 아래 두 개는 store에 추가할 예정(하단 2) 참고)
-  const viewerEnabled = useStudioStore((s: any) => s.viewerEnabled ?? true);
-  const viewerPinnedNodeId = useStudioStore((s: any) => s.viewerPinnedNodeId ?? null);
+  const viewerEnabled = useStudioStore((s) => s.viewerEnabled);
+  const viewerPinnedNodeId = useStudioStore((s) => s.viewerPinnedNodeId);
+  const viewerMode = useStudioStore((s) => s.viewerMode);
+  const viewerOpacity = useStudioStore((s) => s.viewerOpacity);
+  const viewerFps = useStudioStore((s) => s.viewerFps);
+
+  const toggleViewer = useStudioStore((s) => s.toggleViewer);
+  const pinViewerToNode = useStudioStore((s) => s.pinViewerToNode);
+  const unpinViewer = useStudioStore((s) => s.unpinViewer);
+  const setViewerMode = useStudioStore((s) => s.setViewerMode);
+  const setViewerOpacity = useStudioStore((s) => s.setViewerOpacity);
+  const setViewerFps = useStudioStore((s) => s.setViewerFps);
 
   const activeNodeId = viewerPinnedNodeId ?? selectedNodeId;
   const kind = activeNodeId ? nodeKindById[activeNodeId] : null;
   const srcCanvas = activeNodeId ? previewCanvasByNodeId[activeNodeId] : null;
-
-  const [mode, setMode] = useState<Mode>("fit");
-  const [fps, setFps] = useState(0);
-  const [opacity, setOpacity] = useState(0.22); // 배경에 깔릴 “잔잔함” 강도
 
   const viewRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -34,31 +36,33 @@ export default function ViewerPane() {
     return `Background · ${kind ?? "unknown"} · ${activeNodeId}`;
   }, [activeNodeId, kind]);
 
-  // 단축키(작업 효율)
+  // ✅ 키보드 리스너는 HUD에서만 (중복 등록 방지)
   useEffect(() => {
+    if (placement !== "hud") return;
+
     const onKeyDown = (e: KeyboardEvent) => {
-      // Studio에서 흔히 쓰는 키랑 충돌 줄이려고 Alt 조합만 사용
       if (!e.altKey) return;
 
-      if (e.key === "v" || e.key === "V") {
-        // store에 toggleViewer가 있으면 그걸 쓰고, 없으면 viewerEnabled 직접 set (아래 store 스니펫 참고)
-        const toggle = (useStudioStore.getState() as any).toggleViewer;
-        if (typeof toggle === "function") toggle();
-      }
-      if (e.key === "1") setMode("fit");
-      if (e.key === "2") setMode("fill");
-      if (e.key === "3") setMode("1:1");
+      if (e.key === "v" || e.key === "V") toggleViewer();
+      if (e.key === "1") setViewerMode("fit");
+      if (e.key === "2") setViewerMode("fill");
+      if (e.key === "3") setViewerMode("1:1");
 
-      // Alt + [ / ] : opacity 조절
-      if (e.key === "[") setOpacity((v) => Math.max(0.05, +(v - 0.03).toFixed(2)));
-      if (e.key === "]") setOpacity((v) => Math.min(0.6, +(v + 0.03).toFixed(2)));
+      if (e.key === "[" || e.key === "]") {
+        const cur = useStudioStore.getState().viewerOpacity;
+        const next = e.key === "[" ? cur - 0.03 : cur + 0.03;
+        setViewerOpacity(next);
+      }
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [placement, toggleViewer, setViewerMode, setViewerOpacity]);
 
+  // ✅ 렌더 루프는 background에서만 (중복 루프 방지)
   useEffect(() => {
+    if (placement !== "background") return;
+
     let raf = 0;
     let lastT = performance.now();
     let frames = 0;
@@ -85,8 +89,6 @@ export default function ViewerPane() {
         view.height = h * dpr;
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-      // 배경은 "투명"으로 두고 (Studio 배경/그라데이션이 보이게)
       ctx.clearRect(0, 0, w, h);
 
       if (viewerEnabled && srcCanvas) {
@@ -99,30 +101,27 @@ export default function ViewerPane() {
         let dw = sw;
         let dh = sh;
 
-        if (mode === "1:1") {
+        const sAspect = sw / sh;
+        const vAspect = vw / vh;
+
+        if (viewerMode === "1:1") {
           dw = sw;
           dh = sh;
-        } else {
-          const sAspect = sw / sh;
-          const vAspect = vw / vh;
-
-          if (mode === "fit") {
-            if (sAspect > vAspect) {
-              dw = vw;
-              dh = vw / sAspect;
-            } else {
-              dh = vh;
-              dw = vh * sAspect;
-            }
+        } else if (viewerMode === "fit") {
+          if (sAspect > vAspect) {
+            dw = vw;
+            dh = vw / sAspect;
           } else {
-            // fill
-            if (sAspect > vAspect) {
-              dh = vh;
-              dw = vh * sAspect;
-            } else {
-              dw = vw;
-              dh = vw / sAspect;
-            }
+            dh = vh;
+            dw = vh * sAspect;
+          }
+        } else {
+          if (sAspect > vAspect) {
+            dh = vh;
+            dw = vh * sAspect;
+          } else {
+            dw = vw;
+            dh = vw / sAspect;
           }
         }
 
@@ -130,29 +129,16 @@ export default function ViewerPane() {
         const dy = (vh - dh) / 2;
 
         ctx.save();
-        ctx.globalAlpha = opacity;
-
-        // TD 느낌: 너무 “이미지” 같이 튀지 않게 약간 부드럽게
+        ctx.globalAlpha = viewerOpacity;
         ctx.imageSmoothingEnabled = true;
         ctx.drawImage(srcCanvas, dx, dy, dw, dh);
-
-        // 약한 비네팅(잔잔하게 뒤로 보내기)
-        const g = ctx.createRadialGradient(vw * 0.5, vh * 0.45, 10, vw * 0.5, vh * 0.5, Math.max(vw, vh) * 0.75);
-        g.addColorStop(0, "rgba(0,0,0,0.00)");
-        g.addColorStop(1, "rgba(0,0,0,0.55)");
-        ctx.globalAlpha = Math.min(0.55, opacity + 0.12);
-        ctx.fillStyle = g;
-        ctx.fillRect(0, 0, vw, vh);
-
         ctx.restore();
       }
 
-      // FPS(디버그용)
       frames++;
       const now = performance.now();
       if (now - lastT >= 500) {
-        const next = Math.round((frames * 1000) / (now - lastT));
-        setFps(next);
+        setViewerFps(Math.round((frames * 1000) / (now - lastT)));
         frames = 0;
         lastT = now;
       }
@@ -162,43 +148,82 @@ export default function ViewerPane() {
 
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [srcCanvas, mode, opacity, viewerEnabled]);
+  }, [placement, srcCanvas, viewerEnabled, viewerMode, viewerOpacity, setViewerFps]);
 
-  // HUD는 “최소한”만: 켜져있을 때만, 오른쪽 상단에 아주 약하게
-  return (
-    <div className={`viewerBackdrop ${viewerEnabled ? "isOn" : "isOff"}`}>
-      <canvas ref={viewRef} className="viewerBackdrop__canvas" />
+  // ===== Render =====
 
-      <div className="viewerBackdrop__hud" aria-hidden="false">
-        <div className="viewerBackdrop__row">
-          <span className="viewerBackdrop__title">{title}</span>
-          <span className="viewerBackdrop__pill">FPS {fps}</span>
-        </div>
-
-        <div className="viewerBackdrop__row">
-          <button className={`viewerBackdrop__btn ${mode === "fit" ? "isOn" : ""}`} onClick={() => setMode("fit")}>
-            Fit
-          </button>
-          <button className={`viewerBackdrop__btn ${mode === "fill" ? "isOn" : ""}`} onClick={() => setMode("fill")}>
-            Fill
-          </button>
-          <button className={`viewerBackdrop__btn ${mode === "1:1" ? "isOn" : ""}`} onClick={() => setMode("1:1")}>
-            1:1
-          </button>
-
-          <div className="viewerBackdrop__sep" />
-
-          <button className="viewerBackdrop__btn" onClick={() => setOpacity((v) => Math.max(0.05, +(v - 0.03).toFixed(2)))}>
-            −
-          </button>
-          <span className="viewerBackdrop__pill">Opacity {Math.round(opacity * 100)}%</span>
-          <button className="viewerBackdrop__btn" onClick={() => setOpacity((v) => Math.min(0.6, +(v + 0.03).toFixed(2)))}>
-            +
-          </button>
-        </div>
-
-        <div className="viewerBackdrop__hint">Alt+V 토글 · Alt+1/2/3 모드 · Alt+[ / ] 투명도</div>
+  if (placement === "background") {
+    return (
+      <div className={`viewerBackdrop viewerBackdrop--bg ${viewerEnabled ? "isOn" : "isOff"}`}>
+        <canvas ref={viewRef} className="viewerBackdrop__canvas" />
       </div>
+    );
+  }
+
+  const isPinned = Boolean(viewerPinnedNodeId);
+
+  return (
+    <div
+      className={`viewerBackdrop viewerBackdrop--hud ${viewerEnabled ? "isOn" : "isOff"}`}
+      onPointerDown={(e) => e.stopPropagation()} // ✅ 네트워크로 이벤트 누수 차단
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="viewerBackdrop__row">
+        <span className="viewerBackdrop__title">{title}</span>
+        <span className="viewerBackdrop__pill">FPS {viewerFps}</span>
+
+        <div className="viewerBackdrop__sep" />
+
+        <button className={`viewerBackdrop__btn ${viewerEnabled ? "isOn" : ""}`} onClick={toggleViewer}>
+          {viewerEnabled ? "On" : "Off"}
+        </button>
+
+        <button
+          className={`viewerBackdrop__btn ${isPinned ? "isOn" : ""}`}
+          disabled={!selectedNodeId}
+          onClick={() => {
+            if (!selectedNodeId) return;
+            if (isPinned) unpinViewer();
+            else pinViewerToNode(selectedNodeId);
+          }}
+        >
+          {isPinned ? "Unpin" : "Pin"}
+        </button>
+      </div>
+
+      <div className="viewerBackdrop__row">
+        <ModeBtn mode="fit" cur={viewerMode} onSet={setViewerMode} />
+        <ModeBtn mode="fill" cur={viewerMode} onSet={setViewerMode} />
+        <ModeBtn mode="1:1" cur={viewerMode} onSet={setViewerMode} />
+
+        <div className="viewerBackdrop__sep" />
+
+        <button className="viewerBackdrop__btn" onClick={() => setViewerOpacity(viewerOpacity - 0.03)}>
+          −
+        </button>
+        <span className="viewerBackdrop__pill">Opacity {Math.round(viewerOpacity * 100)}%</span>
+        <button className="viewerBackdrop__btn" onClick={() => setViewerOpacity(viewerOpacity + 0.03)}>
+          +
+        </button>
+      </div>
+
+      <div className="viewerBackdrop__hint">Alt+V 토글 · Alt+1/2/3 모드 · Alt+[ / ] 투명도</div>
     </div>
+  );
+}
+
+function ModeBtn({
+  mode,
+  cur,
+  onSet,
+}: {
+  mode: ViewerMode;
+  cur: ViewerMode;
+  onSet: (m: ViewerMode) => void;
+}) {
+  return (
+    <button className={`viewerBackdrop__btn ${cur === mode ? "isOn" : ""}`} onClick={() => onSet(mode)}>
+      {mode}
+    </button>
   );
 }

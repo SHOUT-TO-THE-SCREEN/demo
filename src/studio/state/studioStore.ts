@@ -13,20 +13,34 @@ export type NodeParams =
   | { kind: "lookup"; invert: boolean }
   | { kind: "output"; exposure: number };
 
+export type ViewerMode = "fit" | "fill" | "1:1";
+
 type SpawnImpl = ((kind: NodeKind, clientX?: number, clientY?: number) => void) | null;
 
 type StudioState = {
   selectedNodeId: string | null;
 
+  // ===== Viewer state (정식) =====
+  viewerEnabled: boolean;
+  viewerPinnedNodeId: string | null;
+  viewerMode: ViewerMode;
+  viewerOpacity: number; // 0~1
+  viewerFps: number;
+
+  toggleViewer: () => void;
+  pinViewerToNode: (nodeId: string) => void;
+  unpinViewer: () => void;
+  setViewerMode: (m: ViewerMode) => void;
+  setViewerOpacity: (v: number) => void;
+  setViewerFps: (fps: number) => void;
+
   nodeKindById: Record<string, NodeKind>;
   paramsById: Record<string, NodeParams>;
-
   previewCanvasByNodeId: Record<string, HTMLCanvasElement | null>;
 
   setSelectedNodeId: (id: string | null) => void;
 
   setNodeKind: (id: string, kind: NodeKind) => void;
-
   ensureNodeParams: (id: string, kind: NodeKind) => void;
 
   setParam: <K extends NodeParams["kind"]>(
@@ -63,9 +77,22 @@ function defaultParams(kind: NodeKind): NodeParams {
 export const useStudioStore = create<StudioState>((set, get) => ({
   selectedNodeId: null,
 
+  // Viewer defaults
+  viewerEnabled: true,
+  viewerPinnedNodeId: null,
+  viewerMode: "fit",
+  viewerOpacity: 0.22,
+  viewerFps: 0,
+
+  toggleViewer: () => set((s) => ({ viewerEnabled: !s.viewerEnabled })),
+  pinViewerToNode: (nodeId) => set({ viewerPinnedNodeId: nodeId }),
+  unpinViewer: () => set({ viewerPinnedNodeId: null }),
+  setViewerMode: (m) => set({ viewerMode: m }),
+  setViewerOpacity: (v) => set({ viewerOpacity: Math.min(0.6, Math.max(0.05, +v.toFixed(2))) }),
+  setViewerFps: (fps) => set({ viewerFps: fps }),
+
   nodeKindById: {},
   paramsById: {},
-
   previewCanvasByNodeId: {},
 
   setSelectedNodeId: (id) => set({ selectedNodeId: id }),
