@@ -1,3 +1,5 @@
+// TDNode.tsx
+
 import { useEffect, useRef } from "react";
 import type { NodeProps } from "reactflow";
 import { Handle, Position } from "reactflow";
@@ -16,12 +18,13 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
   const ensureNodeParams = useStudioStore((s) => s.ensureNodeParams);
   const registerPreviewCanvas = useStudioStore((s) => s.registerPreviewCanvas);
 
-  // ✅ Viewer 관련: store에 추가될 예정 (없어도 타입 에러 안 나게 any 처리)
-  const viewerEnabled = useStudioStore((s: any) => s.viewerEnabled ?? true);
-  const viewerPinnedNodeId = useStudioStore((s: any) => s.viewerPinnedNodeId ?? null);
-  const toggleViewer = useStudioStore((s: any) => s.toggleViewer);
-  const pinViewerToNode = useStudioStore((s: any) => s.pinViewerToNode);
-  const clearViewerPin = useStudioStore((s: any) => s.clearViewerPin);
+  // ✅ Viewer 관련 (정식 store 키에 맞춤)
+  const viewerEnabled = useStudioStore((s) => s.viewerEnabled);
+  const viewerPinnedNodeId = useStudioStore((s) => s.viewerPinnedNodeId);
+  const toggleViewer = useStudioStore((s) => s.toggleViewer);
+  const setViewerEnabled = useStudioStore((s) => s.setViewerEnabled); // 아래 2)에서 추가
+  const pinViewerToNode = useStudioStore((s) => s.pinViewerToNode);
+  const unpinViewer = useStudioStore((s) => s.unpinViewer);
 
   const isPinned = viewerPinnedNodeId === id;
 
@@ -36,8 +39,6 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
     return () => registerPreviewCanvas(id, null);
   }, [registerPreviewCanvas, id]);
 
-  const k = data.kind;
-
   const stop = (e: any) => {
     e.preventDefault();
     e.stopPropagation();
@@ -45,17 +46,24 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
 
   const onToggleViewer = (e: any) => {
     stop(e);
-    if (typeof toggleViewer === "function") toggleViewer();
+    toggleViewer();
   };
 
   const onTogglePin = (e: any) => {
     stop(e);
+
     if (isPinned) {
-      if (typeof clearViewerPin === "function") clearViewerPin();
-    } else {
-      if (typeof pinViewerToNode === "function") pinViewerToNode(id);
+      unpinViewer();
+      return;
     }
+
+    // ✅ 핀을 꽂는 순간 Viewer가 꺼져있으면 자동으로 켜주기 (TD UX)
+    if (!viewerEnabled) setViewerEnabled(true);
+
+    pinViewerToNode(id);
   };
+
+  const k = data.kind;
 
   return (
     <div className={`tdNode ${selected ? "tdNode--selected" : ""}`}>
@@ -65,9 +73,8 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
           <div className="tdNode__tag">{k}</div>
         </div>
 
-        {/* ✅ TD 느낌 플래그 영역 */}
+        {/* ✅ 플래그 영역: 노드에서 Viewer / Pin on/off */}
         <div className="tdNode__flags" onPointerDown={stop}>
-          {/* Viewer On/Off */}
           <button
             className={`tdNode__flagBtn ${viewerEnabled ? "isOn" : ""}`}
             title="Viewer On/Off"
@@ -76,10 +83,9 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
             👁
           </button>
 
-          {/* Pin this node to background viewer */}
           <button
             className={`tdNode__flagBtn ${isPinned ? "isOn" : ""}`}
-            title="Display: pin this node to Background Viewer"
+            title={isPinned ? "Unpin from Viewer" : "Pin this node to Viewer"}
             onClick={onTogglePin}
           >
             ⬚
@@ -94,20 +100,8 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
       {/* Inputs */}
       {k === "lookup" && (
         <>
-          <Handle
-            id="in"
-            type="target"
-            position={Position.Left}
-            className="tdHandle tdHandle--in"
-            style={{ top: "38%" }}
-          />
-          <Handle
-            id="lut"
-            type="target"
-            position={Position.Left}
-            className="tdHandle tdHandle--in"
-            style={{ top: "72%" }}
-          />
+          <Handle id="in" type="target" position={Position.Left} className="tdHandle tdHandle--in" style={{ top: "38%" }} />
+          <Handle id="lut" type="target" position={Position.Left} className="tdHandle tdHandle--in" style={{ top: "72%" }} />
         </>
       )}
 
