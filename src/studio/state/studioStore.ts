@@ -27,6 +27,9 @@ type StudioState = {
   viewerOpacity: number; // 0~1
   viewerFps: number;
 
+  // ✅ Viewer surface (TouchDesigner-style: runtime renders directly here)
+  viewerCanvas: HTMLCanvasElement | null;
+
   setViewerEnabled: (v: boolean) => void;
   toggleViewer: () => void;
   pinViewerToNode: (nodeId: string) => void;
@@ -34,6 +37,9 @@ type StudioState = {
   setViewerMode: (m: ViewerMode) => void;
   setViewerOpacity: (v: number) => void;
   setViewerFps: (fps: number) => void;
+
+  // ✅ background ViewerPane가 캔버스를 등록
+  registerViewerCanvas: (canvas: HTMLCanvasElement | null) => void;
 
   nodeKindById: Record<string, NodeKind>;
   paramsById: Record<string, NodeParams>;
@@ -84,6 +90,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   viewerOpacity: 0.22,
   viewerFps: 0,
 
+  // ✅ viewer surface
+  viewerCanvas: null,
+
   setViewerEnabled: (v) => set({ viewerEnabled: v }),
   toggleViewer: () => set((s) => ({ viewerEnabled: !s.viewerEnabled })),
   pinViewerToNode: (nodeId) => set({ viewerPinnedNodeId: nodeId }),
@@ -91,6 +100,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   setViewerMode: (m) => set({ viewerMode: m }),
   setViewerOpacity: (v) => set({ viewerOpacity: Math.min(0.6, Math.max(0.05, +v.toFixed(2))) }),
   setViewerFps: (fps) => set({ viewerFps: fps }),
+
+  // ✅ register surface
+  registerViewerCanvas: (canvas) => set({ viewerCanvas: canvas }),
 
   nodeKindById: {},
   paramsById: {},

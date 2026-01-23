@@ -1,5 +1,3 @@
-// TDNode.tsx
-
 import { useEffect, useRef } from "react";
 import type { NodeProps } from "reactflow";
 import { Handle, Position } from "reactflow";
@@ -18,11 +16,11 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
   const ensureNodeParams = useStudioStore((s) => s.ensureNodeParams);
   const registerPreviewCanvas = useStudioStore((s) => s.registerPreviewCanvas);
 
-  // ✅ Viewer 관련 (정식 store 키에 맞춤)
+  // ✅ Viewer 관련 (정식 store)
   const viewerEnabled = useStudioStore((s) => s.viewerEnabled);
   const viewerPinnedNodeId = useStudioStore((s) => s.viewerPinnedNodeId);
   const toggleViewer = useStudioStore((s) => s.toggleViewer);
-  const setViewerEnabled = useStudioStore((s) => s.setViewerEnabled); // 아래 2)에서 추가
+  const setViewerEnabled = useStudioStore((s) => s.setViewerEnabled);
   const pinViewerToNode = useStudioStore((s) => s.pinViewerToNode);
   const unpinViewer = useStudioStore((s) => s.unpinViewer);
 
@@ -39,6 +37,8 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
     return () => registerPreviewCanvas(id, null);
   }, [registerPreviewCanvas, id]);
 
+  const k = data.kind;
+
   const stop = (e: any) => {
     e.preventDefault();
     e.stopPropagation();
@@ -51,19 +51,14 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
 
   const onTogglePin = (e: any) => {
     stop(e);
-
     if (isPinned) {
       unpinViewer();
-      return;
+    } else {
+      // ✅ TD UX: 핀을 꽂는 순간 viewer가 꺼져있으면 자동 ON
+      if (!viewerEnabled) setViewerEnabled(true);
+      pinViewerToNode(id);
     }
-
-    // ✅ 핀을 꽂는 순간 Viewer가 꺼져있으면 자동으로 켜주기 (TD UX)
-    if (!viewerEnabled) setViewerEnabled(true);
-
-    pinViewerToNode(id);
   };
-
-  const k = data.kind;
 
   return (
     <div className={`tdNode ${selected ? "tdNode--selected" : ""}`}>
@@ -73,7 +68,6 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
           <div className="tdNode__tag">{k}</div>
         </div>
 
-        {/* ✅ 플래그 영역: 노드에서 Viewer / Pin on/off */}
         <div className="tdNode__flags" onPointerDown={stop}>
           <button
             className={`tdNode__flagBtn ${viewerEnabled ? "isOn" : ""}`}
@@ -97,7 +91,6 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
         <canvas ref={canvasRef} className="tdNode__canvas" />
       </div>
 
-      {/* Inputs */}
       {k === "lookup" && (
         <>
           <Handle id="in" type="target" position={Position.Left} className="tdHandle tdHandle--in" style={{ top: "38%" }} />
@@ -109,7 +102,6 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
         <Handle id="in" type="target" position={Position.Left} className="tdHandle tdHandle--in" />
       )}
 
-      {/* Outputs */}
       {(k === "audioIn" || k === "fft" || k === "noise" || k === "ramp" || k === "lookup") && (
         <Handle id="out" type="source" position={Position.Right} className="tdHandle tdHandle--out" />
       )}

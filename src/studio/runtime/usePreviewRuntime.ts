@@ -81,6 +81,7 @@ function buildRampLUTCanvas(cache: Map<string, HTMLCanvasElement>, nodeId: strin
 export function usePreviewRuntime(nodes: Node<TDNodeData>[], edges: Edge[]) {
   const previewCanvasByNodeId = useStudioStore((s) => s.previewCanvasByNodeId);
   const paramsById = useStudioStore((s) => s.paramsById);
+  const viewerCanvas = useStudioStore((s) => s.viewerCanvas);
 
   const kindById = useMemo(() => {
     const m: Record<string, NodeKind> = {};
@@ -105,6 +106,10 @@ export function usePreviewRuntime(nodes: Node<TDNodeData>[], edges: Edge[]) {
     const canvasCache = new Map<string, HTMLCanvasElement>();
 
     let raf = 0;
+
+    // Viewer FPS sampling
+    let fpsFrames = 0;
+    let fpsLastT = performance.now();
 
     const loop = () => {
       const now = performance.now();
@@ -230,7 +235,6 @@ export function usePreviewRuntime(nodes: Node<TDNodeData>[], edges: Edge[]) {
           const srcId = inputMap[nodeId]?.["in"] ?? inputMap[nodeId]?.["0"];
           if (!srcId) return null;
 
-          // output은 exposure만 간단히 적용(미리보기)
           const p = paramsById[nodeId];
           const exposure = p && p.kind === "output" ? p.exposure : 1;
 
@@ -268,6 +272,7 @@ export function usePreviewRuntime(nodes: Node<TDNodeData>[], edges: Edge[]) {
         return null;
       };
 
+      // ===== Node previews =====
       for (const nodeId of Object.keys(previewCanvasByNodeId)) {
         const canvas = previewCanvasByNodeId[nodeId];
         if (!canvas) continue;
@@ -288,7 +293,6 @@ export function usePreviewRuntime(nodes: Node<TDNodeData>[], edges: Edge[]) {
         }
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-        // base panel
         ctx.clearRect(0, 0, w, h);
         ctx.fillStyle = "rgba(255,255,255,0.06)";
         drawRoundedRect(ctx, 0, 0, w, h, 12);
@@ -298,40 +302,26 @@ export function usePreviewRuntime(nodes: Node<TDNodeData>[], edges: Edge[]) {
         drawRoundedRect(ctx, 0.5, 0.5, w - 1, h - 1, 12);
         ctx.stroke();
 
-        // inner viewport
         const vx = 10;
         const vy = 26;
         const vw = w - 20;
         const vh = h - 36;
 
-        // determine internal resolution
         const rw = Math.max(96, Math.floor(vw));
         const rh = Math.max(64, Math.floor(vh));
 
-        // render label
         ctx.fillStyle = "rgba(255,255,255,0.55)";
         ctx.font = "12px ui-sans-serif, system-ui";
         ctx.fillText(kind.toUpperCase(), 10, 18);
 
-        // draw output
-        const out =
-          kind === "ramp"
-            ? evalTOP(nodeId, 256, 1)
-            : evalTOP(nodeId, rw, rh);
+        const out = kind === "ramp" ? evalTOP(nodeId, 256, 1) : evalTOP(nodeId, rw, rh);
 
         if (out) {
           ctx.imageSmoothingEnabled = false;
           drawRoundedRect(ctx, vx, vy, vw, vh, 12);
           ctx.save();
           ctx.clip();
-
-          if (kind === "ramp") {
-            // LUT는 세로로 늘려서 보여주기
-            ctx.drawImage(out, vx, vy, vw, vh);
-          } else {
-            ctx.drawImage(out, vx, vy, vw, vh);
-          }
-
+          ctx.drawImage(out, vx, vy, vw, vh);
           ctx.restore();
           ctx.imageSmoothingEnabled = true;
         } else {
@@ -341,10 +331,112 @@ export function usePreviewRuntime(nodes: Node<TDNodeData>[], edges: Edge[]) {
         }
       }
 
+      // =========================
+      // ✅ Viewer Surface (TD-style)
+      // =========================
+      {
+        const s = useStudioStore.getState();
+        const vc = viewerCanvas;
+
+        const enabled = s.viewerEnabled;
+        const mode = s.viewerMode;
+        const targetId = s.viewerPinnedNodeId ?? s.selectedNodeId;
+
+        if (vc) {
+          const vctx = vc.getContext("2d");
+
+          const dpr = Math.max(1, Math.floor(window.devicePixelRatio || 1));
+          const vw = vc.clientWidth || 640;
+          const vh = vc.clientHeight || 360;
+
+          if (vc.width !== vw * dpr || vc.height !== vh * dpr) {
+            vc.width = vw * dpr;
+            vc.height = vh * dpr;
+          }
+
+          if (vctx) {
+            vctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            vctx.clearRect(0, 0, vw, vh);
+
+            if (enabled && targetId) {
+              const rw = Math.max(256, Math.floor(vw));
+              const rh = Math.max(144, Math.floor(vh));
+
+              const kind = kindById[targetId];
+              const out = kind === "ramp" ? evalTOP(targetId, 256, 1) : evalTOP(targetId, rw, rh);
+
+              if (out) {
+                const sw = out.width;
+                const sh = out.height;
+
+                let dx = 0,
+                  dy = 0,
+                  dw = vw,
+                  dh = vh;
+
+                if (mode === "1:1") {
+                  dw = sw;
+                  dh = sh;
+                  dx = Math.floor((vw - dw) / 2);
+                  dy = Math.floor((vh - dh) / 2);
+                } else {
+                  const sAspect = sw / sh;
+                  const dAspect = vw / vh;
+                  const contain = mode === "fit";
+
+                  if (contain) {
+                    if (sAspect > dAspect) {
+                      dw = vw;
+                      dh = vw / sAspect;
+                      dx = 0;
+                      dy = (vh - dh) / 2;
+                    } else {
+                      dh = vh;
+                      dw = vh * sAspect;
+                      dy = 0;
+                      dx = (vw - dw) / 2;
+                    }
+                  } else {
+                    // cover
+                    if (sAspect > dAspect) {
+                      dh = vh;
+                      dw = vh * sAspect;
+                      dy = 0;
+                      dx = (vw - dw) / 2;
+                    } else {
+                      dw = vw;
+                      dh = vw / sAspect;
+                      dx = 0;
+                      dy = (vh - dh) / 2;
+                    }
+                  }
+                }
+
+                vctx.imageSmoothingEnabled = false;
+                vctx.drawImage(out, dx, dy, dw, dh);
+                vctx.imageSmoothingEnabled = true;
+
+                fpsFrames++;
+                if (now - fpsLastT >= 800) {
+                  const fps = Math.round((fpsFrames * 1000) / (now - fpsLastT));
+                  useStudioStore.getState().setViewerFps(fps);
+                  fpsFrames = 0;
+                  fpsLastT = now;
+                }
+              } else {
+                useStudioStore.getState().setViewerFps(0);
+              }
+            } else {
+              useStudioStore.getState().setViewerFps(0);
+            }
+          }
+        }
+      }
+
       raf = requestAnimationFrame(loop);
     };
 
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [previewCanvasByNodeId, paramsById, kindById, inputMap]);
+  }, [previewCanvasByNodeId, paramsById, kindById, inputMap, viewerCanvas]);
 }
