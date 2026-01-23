@@ -20,27 +20,44 @@ type SpawnImpl = ((kind: NodeKind, clientX?: number, clientY?: number) => void) 
 type StudioState = {
   selectedNodeId: string | null;
 
-  // ===== Viewer (정식) =====
+  // ===== Viewer (전역) =====
   viewerEnabled: boolean;
+
+  // (구형 pin 개념 - 호환용 유지)
   viewerPinnedNodeId: string | null;
+
+  // ✅ TD-style flags
+  viewerNodeId: string | null;   // Viewer Flag (V)
+  displayNodeId: string | null;  // Display Flag (D)
+  bypassByNodeId: Record<string, boolean>; // Bypass Flag (B)
+
   viewerMode: ViewerMode;
   viewerOpacity: number; // 0~1
   viewerFps: number;
 
-  // ✅ Viewer surface (TouchDesigner-style: runtime renders directly here)
+  // Viewer surface (TD-style: runtime renders directly here)
   viewerCanvas: HTMLCanvasElement | null;
 
+  // ===== actions =====
   setViewerEnabled: (v: boolean) => void;
   toggleViewer: () => void;
+
+  // pin/unpin (호환용): 내부적으로 viewerNodeId도 같이 맞춰둠
   pinViewerToNode: (nodeId: string) => void;
   unpinViewer: () => void;
+
   setViewerMode: (m: ViewerMode) => void;
   setViewerOpacity: (v: number) => void;
   setViewerFps: (fps: number) => void;
 
-  // ✅ background ViewerPane가 캔버스를 등록
   registerViewerCanvas: (canvas: HTMLCanvasElement | null) => void;
 
+  // ✅ TD-style flags actions
+  setViewerNodeId: (nodeId: string | null) => void;
+  setDisplayNodeId: (nodeId: string | null) => void;
+  toggleBypass: (nodeId: string) => void;
+
+  // ===== graph data =====
   nodeKindById: Record<string, NodeKind>;
   paramsById: Record<string, NodeParams>;
   previewCanvasByNodeId: Record<string, HTMLCanvasElement | null>;
@@ -85,24 +102,50 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   // Viewer defaults
   viewerEnabled: true,
+
+  // legacy pin
   viewerPinnedNodeId: null,
+
+  // ✅ TD flags
+  viewerNodeId: null,
+  displayNodeId: null,
+  bypassByNodeId: {},
+
   viewerMode: "fit",
   viewerOpacity: 0.22,
   viewerFps: 0,
 
-  // ✅ viewer surface
   viewerCanvas: null,
 
   setViewerEnabled: (v) => set({ viewerEnabled: v }),
   toggleViewer: () => set((s) => ({ viewerEnabled: !s.viewerEnabled })),
-  pinViewerToNode: (nodeId) => set({ viewerPinnedNodeId: nodeId }),
-  unpinViewer: () => set({ viewerPinnedNodeId: null }),
+
+  // legacy pin (호환용) — 실제로는 viewer flag처럼 동작하도록 맞춤
+  pinViewerToNode: (nodeId) =>
+    set({
+      viewerPinnedNodeId: nodeId,
+      viewerNodeId: nodeId,
+    }),
+  unpinViewer: () =>
+    set({
+      viewerPinnedNodeId: null,
+      viewerNodeId: null,
+    }),
+
   setViewerMode: (m) => set({ viewerMode: m }),
   setViewerOpacity: (v) => set({ viewerOpacity: Math.min(0.6, Math.max(0.05, +v.toFixed(2))) }),
   setViewerFps: (fps) => set({ viewerFps: fps }),
 
-  // ✅ register surface
   registerViewerCanvas: (canvas) => set({ viewerCanvas: canvas }),
+
+  // ✅ TD flags actions
+  setViewerNodeId: (nodeId) => set({ viewerNodeId: nodeId, viewerPinnedNodeId: null }),
+  setDisplayNodeId: (nodeId) => set({ displayNodeId: nodeId }),
+  toggleBypass: (nodeId) =>
+    set((s) => {
+      const cur = Boolean(s.bypassByNodeId[nodeId]);
+      return { bypassByNodeId: { ...s.bypassByNodeId, [nodeId]: !cur } };
+    }),
 
   nodeKindById: {},
   paramsById: {},

@@ -81,6 +81,9 @@ function buildRampLUTCanvas(cache: Map<string, HTMLCanvasElement>, nodeId: strin
 export function usePreviewRuntime(nodes: Node<TDNodeData>[], edges: Edge[]) {
   const previewCanvasByNodeId = useStudioStore((s) => s.previewCanvasByNodeId);
   const paramsById = useStudioStore((s) => s.paramsById);
+
+  // ✅ TD flags state needed in runtime loop
+  const bypassByNodeId = useStudioStore((s) => s.bypassByNodeId);
   const viewerCanvas = useStudioStore((s) => s.viewerCanvas);
 
   const kindById = useMemo(() => {
@@ -102,9 +105,7 @@ export function usePreviewRuntime(nodes: Node<TDNodeData>[], edges: Edge[]) {
   }, [edges]);
 
   useEffect(() => {
-    // Offscreen caches (재사용)
     const canvasCache = new Map<string, HTMLCanvasElement>();
-
     let raf = 0;
 
     // Viewer FPS sampling
@@ -123,6 +124,24 @@ export function usePreviewRuntime(nodes: Node<TDNodeData>[], edges: Edge[]) {
         const kind = kindById[nodeId];
         if (!kind) return null;
 
+        const bypassed = Boolean(bypassByNodeId[nodeId]);
+
+        // === BYPASS handling for input-based nodes ===
+        // - lookup: bypass => return input "in"
+        // - output: bypass => return input "in" (skip exposure)
+        if (bypassed) {
+          if (kind === "lookup" || kind === "output" || kind === "fft") {
+            const srcId = inputMap[nodeId]?.["in"] ?? inputMap[nodeId]?.["0"];
+            if (srcId) {
+              const passthru = evalTOP(srcId, w, h);
+              if (passthru) {
+                evalCache.set(nodeId, passthru);
+                return passthru;
+              }
+            }
+          }
+        }
+
         // === NOISE ===
         if (kind === "noise") {
           const p = paramsById[nodeId];
@@ -136,7 +155,7 @@ export function usePreviewRuntime(nodes: Node<TDNodeData>[], edges: Edge[]) {
           const img = ctx.createImageData(w, h);
           const data = img.data;
 
-          const t = (now * 0.001) * speed;
+          const t = now * 0.001 * speed;
 
           for (let y = 0; y < h; y++) {
             for (let x = 0; x < w; x++) {
@@ -310,10 +329,12 @@ export function usePreviewRuntime(nodes: Node<TDNodeData>[], edges: Edge[]) {
         const rw = Math.max(96, Math.floor(vw));
         const rh = Math.max(64, Math.floor(vh));
 
+        // render label
         ctx.fillStyle = "rgba(255,255,255,0.55)";
         ctx.font = "12px ui-sans-serif, system-ui";
         ctx.fillText(kind.toUpperCase(), 10, 18);
 
+        // draw output
         const out = kind === "ramp" ? evalTOP(nodeId, 256, 1) : evalTOP(nodeId, rw, rh);
 
         if (out) {
@@ -332,15 +353,17 @@ export function usePreviewRuntime(nodes: Node<TDNodeData>[], edges: Edge[]) {
       }
 
       // =========================
-      // ✅ Viewer Surface (TD-style)
+      // ✅ Viewer Surface (TD-style): Viewer Flag 우선
       // =========================
       {
         const s = useStudioStore.getState();
-        const vc = viewerCanvas;
+        const vc = s.viewerCanvas;
 
         const enabled = s.viewerEnabled;
         const mode = s.viewerMode;
-        const targetId = s.viewerPinnedNodeId ?? s.selectedNodeId;
+
+        // ✅ 우선순위: Viewer Flag -> (legacy pin) -> selected
+        const targetId = s.viewerNodeId ?? s.viewerPinnedNodeId ?? s.selectedNodeId;
 
         if (vc) {
           const vctx = vc.getContext("2d");
@@ -438,5 +461,5 @@ export function usePreviewRuntime(nodes: Node<TDNodeData>[], edges: Edge[]) {
 
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [previewCanvasByNodeId, paramsById, kindById, inputMap, viewerCanvas]);
+  }, [previewCanvasByNodeId, paramsById, kindById, inputMap, bypassByNodeId]);
 }

@@ -16,15 +16,23 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
   const ensureNodeParams = useStudioStore((s) => s.ensureNodeParams);
   const registerPreviewCanvas = useStudioStore((s) => s.registerPreviewCanvas);
 
-  // ✅ Viewer 관련 (정식 store)
+  // Viewer global
   const viewerEnabled = useStudioStore((s) => s.viewerEnabled);
-  const viewerPinnedNodeId = useStudioStore((s) => s.viewerPinnedNodeId);
   const toggleViewer = useStudioStore((s) => s.toggleViewer);
   const setViewerEnabled = useStudioStore((s) => s.setViewerEnabled);
-  const pinViewerToNode = useStudioStore((s) => s.pinViewerToNode);
-  const unpinViewer = useStudioStore((s) => s.unpinViewer);
 
-  const isPinned = viewerPinnedNodeId === id;
+  // ✅ TD flags
+  const viewerNodeId = useStudioStore((s) => s.viewerNodeId);
+  const displayNodeId = useStudioStore((s) => s.displayNodeId);
+  const bypassByNodeId = useStudioStore((s) => s.bypassByNodeId);
+
+  const setViewerNodeId = useStudioStore((s) => s.setViewerNodeId);
+  const setDisplayNodeId = useStudioStore((s) => s.setDisplayNodeId);
+  const toggleBypass = useStudioStore((s) => s.toggleBypass);
+
+  const isV = viewerNodeId === id;
+  const isD = displayNodeId === id;
+  const isB = Boolean(bypassByNodeId[id]);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -49,15 +57,20 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
     toggleViewer();
   };
 
-  const onTogglePin = (e: any) => {
+  const onToggleV = (e: any) => {
     stop(e);
-    if (isPinned) {
-      unpinViewer();
-    } else {
-      // ✅ TD UX: 핀을 꽂는 순간 viewer가 꺼져있으면 자동 ON
-      if (!viewerEnabled) setViewerEnabled(true);
-      pinViewerToNode(id);
-    }
+    if (!viewerEnabled) setViewerEnabled(true);
+    setViewerNodeId(isV ? null : id);
+  };
+
+  const onToggleD = (e: any) => {
+    stop(e);
+    setDisplayNodeId(isD ? null : id);
+  };
+
+  const onToggleB = (e: any) => {
+    stop(e);
+    toggleBypass(id);
   };
 
   return (
@@ -68,7 +81,9 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
           <div className="tdNode__tag">{k}</div>
         </div>
 
+        {/* ✅ TD-style flags */}
         <div className="tdNode__flags" onPointerDown={stop}>
+          {/* Global Viewer On/Off */}
           <button
             className={`tdNode__flagBtn ${viewerEnabled ? "isOn" : ""}`}
             title="Viewer On/Off"
@@ -77,12 +92,31 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
             👁
           </button>
 
+          {/* Display Flag */}
           <button
-            className={`tdNode__flagBtn ${isPinned ? "isOn" : ""}`}
-            title={isPinned ? "Unpin from Viewer" : "Pin this node to Viewer"}
-            onClick={onTogglePin}
+            className={`tdNode__flagBtn ${isD ? "isOn" : ""}`}
+            title="Display Flag (D)"
+            onClick={onToggleD}
           >
-            ⬚
+            D
+          </button>
+
+          {/* Viewer Flag */}
+          <button
+            className={`tdNode__flagBtn ${isV ? "isOn" : ""}`}
+            title="Viewer Flag (V)"
+            onClick={onToggleV}
+          >
+            V
+          </button>
+
+          {/* Bypass Flag */}
+          <button
+            className={`tdNode__flagBtn ${isB ? "isOn" : ""}`}
+            title="Bypass Flag (B)"
+            onClick={onToggleB}
+          >
+            B
           </button>
         </div>
       </div>
@@ -91,10 +125,23 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
         <canvas ref={canvasRef} className="tdNode__canvas" />
       </div>
 
+      {/* Inputs */}
       {k === "lookup" && (
         <>
-          <Handle id="in" type="target" position={Position.Left} className="tdHandle tdHandle--in" style={{ top: "38%" }} />
-          <Handle id="lut" type="target" position={Position.Left} className="tdHandle tdHandle--in" style={{ top: "72%" }} />
+          <Handle
+            id="in"
+            type="target"
+            position={Position.Left}
+            className="tdHandle tdHandle--in"
+            style={{ top: "38%" }}
+          />
+          <Handle
+            id="lut"
+            type="target"
+            position={Position.Left}
+            className="tdHandle tdHandle--in"
+            style={{ top: "72%" }}
+          />
         </>
       )}
 
@@ -102,6 +149,7 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
         <Handle id="in" type="target" position={Position.Left} className="tdHandle tdHandle--in" />
       )}
 
+      {/* Outputs */}
       {(k === "audioIn" || k === "fft" || k === "noise" || k === "ramp" || k === "lookup") && (
         <Handle id="out" type="source" position={Position.Right} className="tdHandle tdHandle--out" />
       )}
