@@ -30,7 +30,7 @@ export default function TopBar({ title }: { title: string }) {
               </defs>
             </svg>
           </span>
-          <span className="tdBrand__text">CodeGraph Studio</span>
+          <span className="tdBrand__text">PrismDesign</span>
         </button>
 
         <span className="tdTopBar__title">{title}</span>

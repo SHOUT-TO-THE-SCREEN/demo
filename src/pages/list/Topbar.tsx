@@ -40,7 +40,7 @@ export default function Topbar({ query, setQuery, viewMode, setViewMode, onOpenA
               </defs>
             </svg>
           </span>
-          <span className="brandText_list">CodeGraph Studio</span>
+          <span className="brandText_list">PrismDesign</span>
         </button>
 
         <button className="addBtn_list" type="button" onClick={onOpenAdd}>

@@ -33,7 +33,7 @@ export default function CinematicIntro() {
               </svg>
             </div>
 
-            <h1 className="ci-brandName">TouchDesigner</h1>
+            <h1 className="ci-brandName">PrismDesign</h1>
           </div>
 
           <div className="ci-links">
@@ -281,7 +281,7 @@ export default function CinematicIntro() {
       <footer className="ci-footer">
         <div className="ci-footerInner">
           <div className="ci-footerBrand">
-            <h3>TouchDesigner</h3>
+            <h3>PrismDesign</h3>
             <p>
               Real-time interactive multimedia content platform for artists,
               programmers, and creative developers.
