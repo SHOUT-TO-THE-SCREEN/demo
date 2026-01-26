@@ -633,7 +633,7 @@
 .perfBg {
   position: absolute;
   inset: 0;
-  background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDG-pAjNg253r-Y5gxcF5MmqR9WTlM9kSBJXN2jqqUAuriWDlDMDKZ-rlXGjDSC7l_RExAYooTT63-3Xnw6eQrJYhqAUqOiEwcPv40bTfPjKRii24R0f3zqdNie29_llao7CEh3AXmyslPjTvpaCYlLV0ROFVvvDofxAR_SWEReZYIOcePZl4jymM1AgihKmzSxR0f8R1gK2rxhcsh3wyx6LfmAqQ5IiUGW6KXqr35IW-sw3862UY0aLUeFJcfXdhRG_nwjNfjTp6E");
+  background-image: url("../../public/introimage.png");
   background-size: cover;
   background-position: center;
   transform: scale(1.02);
