@@ -44,7 +44,7 @@ export default function VisualizerPage() {
 
   return (
     <div className="tdStudio">
-      <TopBar title="DOKDOK / Visualizer" />
+      <TopBar title="" />
 
       <div className="tdStudio__body">
         <aside className="tdStudio__left">

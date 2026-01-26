@@ -111,7 +111,7 @@ export default function MiniDemo() {
     };
   }, [dpr]);
 
-  const openEditor = () => navigate("/visualizer");
+  const openEditor = () => navigate("/list");
 
   return (
     <section className="md">

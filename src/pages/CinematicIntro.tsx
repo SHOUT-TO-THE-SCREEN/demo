@@ -5,7 +5,7 @@ export default function CinematicIntro() {
   const navigate = useNavigate();
 
   const goVisualizer = () => {
-    navigate("/visualizer");
+    navigate("/list");
   };
   return (
     <div className="ci">
@@ -96,7 +96,7 @@ export default function CinematicIntro() {
           </p>
 
           <div className="ci-heroActions">
-            <button className="ci-ghostBtn" type="button">
+            <button className="ci-ghostBtn" type="button" onClick={goVisualizer}>
               ▶ PLAY TRAILER
             </button>
 
