@@ -1,0 +1,286 @@
+/* =========================
+   MINI DEMO
+========================= */
+.md {
+  padding: 96px 16px;
+  background: radial-gradient(1200px 800px at 50% 0%, rgba(55, 19, 236, 0.16), transparent 55%),
+    #070707;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.mdInner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.mdTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 14px;
+
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mdTitle h3 {
+  margin: 0;
+  font-size: 34px;
+  letter-spacing: -0.02em;
+}
+
+.mdTitle p {
+  margin: 8px 0 0 0;
+  color: rgba(255, 255, 255, 0.5);
+  max-width: 640px;
+  line-height: 1.6;
+}
+
+.mdTopActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mdChip {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  cursor: pointer;
+
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 900;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mdChip:hover {
+  border-color: rgba(55, 19, 236, 0.6);
+  box-shadow: 0 0 18px rgba(55, 19, 236, 0.2);
+}
+
+.mdCTA {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 10px;
+  cursor: pointer;
+
+  border: 1px solid rgba(55, 19, 236, 0.65);
+  background: rgba(55, 19, 236, 0.14);
+  color: #fff;
+  font-weight: 950;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mdCTA:hover {
+  box-shadow: 0 0 22px rgba(55, 19, 236, 0.25);
+  filter: brightness(1.02);
+}
+
+.mdGrid {
+  display: grid;
+  grid-template-columns: 1.4fr 0.9fr;
+  gap: 18px;
+  align-items: stretch;
+}
+
+.mdViewer {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  min-height: 380px;
+
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 50px -12px rgba(55, 19, 236, 0.22);
+  aspect-ratio: 16 / 9;
+  min-height: 380px;
+}
+
+.mdCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.mdHint {
+  position: absolute;
+  left: 16px;
+  top: 16px;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 8px 12px;
+  border-radius: 999px;
+
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.mdDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: #22c55e;
+  box-shadow: 0 0 14px rgba(34, 197, 94, 0.35);
+}
+
+.mdPanel {
+  border-radius: 18px;
+  padding: 16px;
+  overflow: hidden;
+
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mdGroup {
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mdLabelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.mdLabel {
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.mdValue {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+    monospace;
+}
+
+.mdModeRow {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+}
+
+.mdModeBtn {
+  flex: 1;
+  height: 36px;
+  border-radius: 12px;
+  cursor: pointer;
+
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 900;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+.mdModeBtn:hover {
+  border-color: rgba(55, 19, 236, 0.55);
+}
+
+.mdModeBtn.isActive {
+  background: rgba(55, 19, 236, 0.18);
+  border-color: rgba(55, 19, 236, 0.7);
+  color: #fff;
+  box-shadow: 0 0 18px rgba(55, 19, 236, 0.22);
+}
+
+.mdSlider {
+  width: 100%;
+  margin-top: 10px;
+  accent-color: var(--primary);
+}
+
+.mdHelp {
+  margin: 10px 0 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.mdFoot {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mdNote {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.55;
+  font-size: 12px;
+}
+
+.mdKey {
+  display: inline-block;
+  margin-right: 8px;
+  color: var(--primary);
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.mdGhost {
+  height: 42px;
+  width: 100%;
+  border-radius: 14px;
+  cursor: pointer;
+
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font-weight: 950;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.mdGhost:hover {
+  border-color: rgba(55, 19, 236, 0.6);
+  box-shadow: 0 0 22px rgba(55, 19, 236, 0.22);
+}
+
+/* responsive */
+@media (max-width: 1000px) {
+  .mdGrid {
+    grid-template-columns: 1fr;
+  }
+  .mdViewer {
+    min-height: 340px;
+  }
+}

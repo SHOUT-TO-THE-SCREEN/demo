@@ -1,6 +1,6 @@
 import "./CinematicIntro.css";
 import { useNavigate } from "react-router-dom";
-
+import MiniDemo from "./MiniDemo/MiniDemo";
 export default function CinematicIntro() {
   const navigate = useNavigate();
 
@@ -111,7 +111,8 @@ export default function CinematicIntro() {
           <span className="ci-bounce">↓</span>
         </div>
       </header>
-
+      {/* MINI DEMO */}
+      <MiniDemo />
       {/* SHOWCASE */}
       <section className="ci-sec ci-showcase">
         <div className="ci-secTop">
