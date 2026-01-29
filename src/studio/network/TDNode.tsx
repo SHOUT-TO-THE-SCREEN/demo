@@ -19,7 +19,6 @@ declare global {
   }
 }
 
-// 파일 로드 시점에 이전 리스너가 남아있다면 즉시 정리
 if (typeof window !== "undefined" && window.__tdResizeCleanup) {
   try {
     window.__tdResizeCleanup();
@@ -27,7 +26,6 @@ if (typeof window !== "undefined" && window.__tdResizeCleanup) {
   window.__tdResizeCleanup = null;
 }
 
-// (같은 파일 안에서 세션 1개만 허용)
 let activeResizeCleanup: null | (() => void) = null;
 
 export default function TDNode(props: NodeProps<TDNodeData>) {
@@ -38,12 +36,10 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
   const ensureNodeParams = useStudioStore((s) => s.ensureNodeParams);
   const registerPreviewCanvas = useStudioStore((s) => s.registerPreviewCanvas);
 
-  // Viewer global
   const viewerEnabled = useStudioStore((s) => s.viewerEnabled);
   const toggleViewer = useStudioStore((s) => s.toggleViewer);
   const setViewerEnabled = useStudioStore((s) => s.setViewerEnabled);
 
-  // TD flags
   const viewerNodeId = useStudioStore((s) => s.viewerNodeId);
   const displayNodeId = useStudioStore((s) => s.displayNodeId);
   const bypassByNodeId = useStudioStore((s) => s.bypassByNodeId);
@@ -68,7 +64,6 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
     return () => registerPreviewCanvas(id, null);
   }, [registerPreviewCanvas, id]);
 
-  // ✅ 컴포넌트 언마운트 시 남은 세션 정리
   useEffect(() => {
     return () => {
       if (activeResizeCleanup) {
@@ -114,14 +109,10 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
     toggleBypass(id);
   };
 
-  /** =========================
-   *  ✅ TD-style Resize (Hard cleanup)
-   *  ========================= */
   const onResizePointerDown = useCallback(
     (e: React.PointerEvent) => {
       stop(e);
 
-      // ✅ 이전 세션이 남아있으면 무조건 종료
       if (activeResizeCleanup) {
         try {
           activeResizeCleanup();
@@ -129,7 +120,6 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
         activeResizeCleanup = null;
       }
 
-      // ✅ 혹시 window 전역 cleanup이 남아있으면 먼저 종료
       if (typeof window !== "undefined" && window.__tdResizeCleanup) {
         try {
           window.__tdResizeCleanup();
@@ -137,7 +127,6 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
         window.__tdResizeCleanup = null;
       }
 
-      // Undo 스냅샷을 NetworkEditor에 요청
       window.dispatchEvent(new CustomEvent("td:pushHistory"));
 
       const handleEl = e.currentTarget as HTMLElement;
@@ -159,7 +148,6 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
       const onMove = (ev: PointerEvent) => {
         if (!alive) return;
 
-        // 버튼이 0인데 up이 안 온 경우 강제 종료
         if ((ev.buttons ?? 1) === 0) {
           cleanup();
           return;
@@ -176,17 +164,13 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
             if (n.id !== id) return n;
             return {
               ...n,
-              style: {
-                ...(n.style ?? {}),
-                width: nextW,
-                height: nextH,
-              },
+              style: { ...(n.style ?? {}), width: nextW, height: nextH },
             };
           })
         );
       };
 
-      const onUp = (_ev: Event) => cleanup();
+      const onUp = () => cleanup();
       const onBlur = () => cleanup();
 
       const cleanup = () => {
@@ -203,73 +187,100 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
         } catch {}
 
         if (activeResizeCleanup === cleanupFn) activeResizeCleanup = null;
-        if (typeof window !== "undefined" && window.__tdResizeCleanup === cleanupFn) window.__tdResizeCleanup = null;
+        if (typeof window !== "undefined" && window.__tdResizeCleanup === cleanupFn) {
+          window.__tdResizeCleanup = null;
+        }
       };
 
       const cleanupFn = () => cleanup();
 
-      // ✅ capture 단계(true): ReactFlow 내부 핸들러보다 먼저 받도록
       window.addEventListener("pointermove", onMove, true);
       window.addEventListener("pointerup", onUp as any, true);
       window.addEventListener("pointercancel", onUp as any, true);
       window.addEventListener("blur", onBlur, true);
 
-      // ✅ 세션 등록
       activeResizeCleanup = cleanupFn;
       if (typeof window !== "undefined") window.__tdResizeCleanup = cleanupFn;
     },
     [id, rf]
   );
 
+  const isComposite = k === "over" || k === "add" || k === "multiply" || k === "screen" || k === "subtract";
+  const isLookup = k === "lookup";
+
+  const hasIn1 =
+    k === "fft" ||
+    k === "output" ||
+    k === "null" ||
+    k === "transform" ||
+    k === "level" ||
+    k === "hsvAdjust" ||
+    k === "blur" ||
+    k === "edgeDetect";
+
+  const hasOut =
+    k === "audioIn" ||
+    k === "mouseIn" ||
+    k === "webcamIn" ||
+    k === "fft" ||
+    k === "noise" ||
+    k === "ramp" ||
+    k === "lookup" ||
+    k === "constant" ||
+    k === "movieIn" ||
+    k === "videoDeviceIn" ||
+    k === "transform" ||
+    k === "level" ||
+    k === "hsvAdjust" ||
+    k === "blur" ||
+    k === "edgeDetect" ||
+    k === "null" ||
+    isComposite;
+
   return (
     <div ref={rootRef} className={`tdNode ${selected ? "tdNode--selected" : ""}`}>
-      <div className="tdNode__hdr">
+      {/* Header (CSS: tdNode__hdr / tdNode__hdrLeft / tdNode__tag / tdNode__title) */}
+      <div className="tdNode__hdr" onPointerDown={stop}>
         <div className="tdNode__hdrLeft">
+          <div className="tdNode__tag">{String(data.kind).toUpperCase()}</div>
           <div className="tdNode__title">{data.label}</div>
-          <div className="tdNode__tag">{k}</div>
         </div>
 
-        {/* TD-style flags */}
         <div className="tdNode__flags" onPointerDown={stop}>
-          {/* Global Viewer On/Off */}
-          <button className={`tdNode__flagBtn ${viewerEnabled ? "isOn" : ""}`} title="Viewer On/Off" onClick={onToggleViewer}>
+          <button
+            className={`tdNode__flagBtn ${viewerEnabled ? "isOn" : ""}`}
+            title="Viewer On/Off"
+            onClick={onToggleViewer}
+          >
             👁
           </button>
 
-          {/* Display Flag */}
           <button className={`tdNode__flagBtn ${isD ? "isOn" : ""}`} title="Display Flag (D)" onClick={onToggleD}>
             D
           </button>
 
-          {/* Viewer Flag */}
           <button className={`tdNode__flagBtn ${isV ? "isOn" : ""}`} title="Viewer Flag (V)" onClick={onToggleV}>
             V
           </button>
 
-          {/* Bypass Flag */}
           <button className={`tdNode__flagBtn ${isB ? "isOn" : ""}`} title="Bypass Flag (B)" onClick={onToggleB}>
             B
           </button>
         </div>
       </div>
 
+      {/* Thumb */}
       <div className="tdNode__thumb">
         <canvas ref={canvasRef} className="tdNode__canvas" />
       </div>
 
-      {/* ✅ Resize handle (bottom-right) */}
+      {/* Resize */}
       <div className="tdNode__resizeHandle" title="Resize" onPointerDown={onResizePointerDown} />
 
       {/* Inputs */}
-      {k === "lookup" && (
+      {isLookup && (
         <>
-          <Handle
-            id="in"
-            type="target"
-            position={Position.Left}
-            className="tdHandle tdHandle--in"
-            style={{ top: "38%" }}
-          />
+          <Handle id="in" type="target" position={Position.Left} className="tdHandle tdHandle--in" style={{ top: "38%" }} />
           <Handle
             id="lut"
             type="target"
@@ -280,14 +291,19 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
         </>
       )}
 
-      {(k === "fft" || k === "output") && (
+      {isComposite && (
+        <>
+          <Handle id="a" type="target" position={Position.Left} className="tdHandle tdHandle--in" style={{ top: "38%" }} />
+          <Handle id="b" type="target" position={Position.Left} className="tdHandle tdHandle--in" style={{ top: "72%" }} />
+        </>
+      )}
+
+      {hasIn1 && !isComposite && !isLookup && (
         <Handle id="in" type="target" position={Position.Left} className="tdHandle tdHandle--in" />
       )}
 
       {/* Outputs */}
-      {(k === "audioIn" || k === "fft" || k === "noise" || k === "ramp" || k === "lookup") && (
-        <Handle id="out" type="source" position={Position.Right} className="tdHandle tdHandle--out" />
-      )}
+      {hasOut && <Handle id="out" type="source" position={Position.Right} className="tdHandle tdHandle--out" />}
     </div>
   );
 }

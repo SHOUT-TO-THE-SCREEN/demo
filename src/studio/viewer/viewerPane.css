@@ -3,21 +3,25 @@
 .viewerBackdrop {
   position: absolute;
   inset: 0;
-  z-index: 0; /* Studio의 네트워크/노드 UI 보다 뒤 */
-  pointer-events: none; /* 그래프 조작 방해 금지 */
-    height: 0 !important;
+  z-index: 0;          /* 네트워크 뒤 */
+  pointer-events: none;
+
+  /* ❌ 제거: height: 0 !important; */
+  width: 100%;
+  height: 100%;
 }
 
-.viewerBackdrop__canvas {
-  width: 100%;
-  height: 100vh;
-  display: block;
-}
 .viewerBackdrop--bg {
   position: absolute;
   inset: 0;
-  pointer-events: none; /* ✅ 배경 캔버스는 클릭을 막지 않음 */
   z-index: 0;
+  pointer-events: none;
+}
+
+.viewerBackdrop__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;        /* ❌ 100vh 제거 */
 }
 
 /* HUD는 네트워크 위 + 클릭 가능 */

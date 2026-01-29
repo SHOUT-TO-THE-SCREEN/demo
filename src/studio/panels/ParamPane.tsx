@@ -1,6 +1,6 @@
 import "./paramPane.css";
 import { useStudioStore } from "../state/studioStore";
-import type { RampStop, RampParams } from "../state/studioStore";
+import type { RampStop, RampParams, NodeKind } from "../state/studioStore";
 
 type Props = {
   nodeId?: string | null;
@@ -26,6 +26,7 @@ export default function ParamPane({ nodeId }: Props) {
     );
   }
 
+  // ===== NOISE =====
   if (kind === "noise") {
     const p =
       params && params.kind === "noise"
@@ -84,6 +85,26 @@ export default function ParamPane({ nodeId }: Props) {
     );
   }
 
+  // ===== CONSTANT =====
+  if (kind === "constant") {
+    const p = params && params.kind === "constant" ? params : { kind: "constant" as const, color: "#000000" };
+
+    return (
+      <aside className="paramPane">
+        <div className="paramPane__title">Constant TOP</div>
+
+        <Row label="Color">
+          <input
+            type="color"
+            value={p.color}
+            onChange={(e) => setParam(effectiveId, "constant", { color: e.target.value })}
+          />
+        </Row>
+      </aside>
+    );
+  }
+
+  // ===== RAMP =====
   if (kind === "ramp") {
     const p: RampParams =
       params && params.kind === "ramp"
@@ -122,6 +143,17 @@ export default function ParamPane({ nodeId }: Props) {
       <aside className="paramPane">
         <div className="paramPane__title">Ramp TOP</div>
 
+        <Row label="Interpolation">
+          <select
+            className="paramPane__input"
+            value={p.interpolation}
+            onChange={(e) => setParam(effectiveId, "ramp", { interpolation: e.target.value as any })}
+          >
+            <option value="linear">linear</option>
+            <option value="smoothstep">smoothstep</option>
+          </select>
+        </Row>
+
         <div className="paramPane__rampPreview" style={{ background: gradientCss }} />
         <div className="paramPane__rampActions">
           <button className="paramPane__btn" onClick={addStop}>
@@ -158,6 +190,7 @@ export default function ParamPane({ nodeId }: Props) {
     );
   }
 
+  // ===== LOOKUP =====
   if (kind === "lookup") {
     const p = params && params.kind === "lookup" ? params : { kind: "lookup" as const, invert: false };
 
@@ -178,6 +211,265 @@ export default function ParamPane({ nodeId }: Props) {
     );
   }
 
+  // ===== TRANSFORM =====
+  if (kind === "transform") {
+    const p =
+      params && params.kind === "transform"
+        ? params
+        : { kind: "transform" as const, tx: 0, ty: 0, rotate: 0, scale: 1 };
+
+    return (
+      <aside className="paramPane">
+        <div className="paramPane__title">Transform TOP</div>
+
+        <Row label="Tx">
+          <input
+            type="range"
+            min={-400}
+            max={400}
+            step={1}
+            value={p.tx}
+            onChange={(e) => setParam(effectiveId, "transform", { tx: Number(e.target.value) })}
+          />
+          <span className="paramPane__value">{p.tx}</span>
+        </Row>
+
+        <Row label="Ty">
+          <input
+            type="range"
+            min={-400}
+            max={400}
+            step={1}
+            value={p.ty}
+            onChange={(e) => setParam(effectiveId, "transform", { ty: Number(e.target.value) })}
+          />
+          <span className="paramPane__value">{p.ty}</span>
+        </Row>
+
+        <Row label="Rotate">
+          <input
+            type="range"
+            min={-180}
+            max={180}
+            step={1}
+            value={p.rotate}
+            onChange={(e) => setParam(effectiveId, "transform", { rotate: Number(e.target.value) })}
+          />
+          <span className="paramPane__value">{p.rotate}°</span>
+        </Row>
+
+        <Row label="Scale">
+          <input
+            type="range"
+            min={0.1}
+            max={3}
+            step={0.01}
+            value={p.scale}
+            onChange={(e) => setParam(effectiveId, "transform", { scale: Number(e.target.value) })}
+          />
+          <span className="paramPane__value">{p.scale.toFixed(2)}</span>
+        </Row>
+      </aside>
+    );
+  }
+
+  // ===== LEVEL =====
+  if (kind === "level") {
+    const p =
+      params && params.kind === "level"
+        ? params
+        : { kind: "level" as const, brightness: 0, contrast: 1, gamma: 1 };
+
+    return (
+      <aside className="paramPane">
+        <div className="paramPane__title">Level TOP</div>
+
+        <Row label="Brightness">
+          <input
+            type="range"
+            min={-1}
+            max={1}
+            step={0.01}
+            value={p.brightness}
+            onChange={(e) => setParam(effectiveId, "level", { brightness: Number(e.target.value) })}
+          />
+          <span className="paramPane__value">{p.brightness.toFixed(2)}</span>
+        </Row>
+
+        <Row label="Contrast">
+          <input
+            type="range"
+            min={0}
+            max={3}
+            step={0.01}
+            value={p.contrast}
+            onChange={(e) => setParam(effectiveId, "level", { contrast: Number(e.target.value) })}
+          />
+          <span className="paramPane__value">{p.contrast.toFixed(2)}</span>
+        </Row>
+
+        <Row label="Gamma">
+          <input
+            type="range"
+            min={0.1}
+            max={5}
+            step={0.01}
+            value={p.gamma}
+            onChange={(e) => setParam(effectiveId, "level", { gamma: Number(e.target.value) })}
+          />
+          <span className="paramPane__value">{p.gamma.toFixed(2)}</span>
+        </Row>
+      </aside>
+    );
+  }
+
+  // ===== HSV ADJUST =====
+  if (kind === "hsvAdjust") {
+    const p =
+      params && params.kind === "hsvAdjust"
+        ? params
+        : { kind: "hsvAdjust" as const, hue: 0, saturation: 1, value: 1 };
+
+    return (
+      <aside className="paramPane">
+        <div className="paramPane__title">HSV Adjust TOP</div>
+
+        <Row label="Hue">
+          <input
+            type="range"
+            min={-180}
+            max={180}
+            step={1}
+            value={p.hue}
+            onChange={(e) => setParam(effectiveId, "hsvAdjust", { hue: Number(e.target.value) })}
+          />
+          <span className="paramPane__value">{p.hue}°</span>
+        </Row>
+
+        <Row label="Saturation">
+          <input
+            type="range"
+            min={0}
+            max={3}
+            step={0.01}
+            value={p.saturation}
+            onChange={(e) => setParam(effectiveId, "hsvAdjust", { saturation: Number(e.target.value) })}
+          />
+          <span className="paramPane__value">{p.saturation.toFixed(2)}</span>
+        </Row>
+
+        <Row label="Value">
+          <input
+            type="range"
+            min={0}
+            max={3}
+            step={0.01}
+            value={p.value}
+            onChange={(e) => setParam(effectiveId, "hsvAdjust", { value: Number(e.target.value) })}
+          />
+          <span className="paramPane__value">{p.value.toFixed(2)}</span>
+        </Row>
+      </aside>
+    );
+  }
+
+  // ===== BLUR =====
+  if (kind === "blur") {
+    const p = params && params.kind === "blur" ? params : { kind: "blur" as const, mode: "gaussian", radius: 4 };
+
+    return (
+      <aside className="paramPane">
+        <div className="paramPane__title">Blur TOP</div>
+
+        <Row label="Mode">
+          <select
+            className="paramPane__input"
+            value={p.mode}
+            onChange={(e) => setParam(effectiveId, "blur", { mode: e.target.value as any })}
+          >
+            <option value="gaussian">gaussian</option>
+            <option value="box">box</option>
+          </select>
+        </Row>
+
+        <Row label="Radius">
+          <input
+            type="range"
+            min={0}
+            max={30}
+            step={1}
+            value={p.radius}
+            onChange={(e) => setParam(effectiveId, "blur", { radius: Number(e.target.value) })}
+          />
+          <span className="paramPane__value">{p.radius}</span>
+        </Row>
+      </aside>
+    );
+  }
+
+  // ===== EDGE DETECT =====
+  if (kind === "edgeDetect") {
+    const p =
+      params && params.kind === "edgeDetect"
+        ? params
+        : { kind: "edgeDetect" as const, threshold: 0, invert: false };
+
+    return (
+      <aside className="paramPane">
+        <div className="paramPane__title">Edge Detect TOP</div>
+
+        <Row label="Threshold">
+          <input
+            type="range"
+            min={0}
+            max={255}
+            step={1}
+            value={p.threshold}
+            onChange={(e) => setParam(effectiveId, "edgeDetect", { threshold: Number(e.target.value) })}
+          />
+          <span className="paramPane__value">{p.threshold}</span>
+        </Row>
+
+        <Row label="Invert">
+          <input
+            type="checkbox"
+            checked={p.invert}
+            onChange={(e) => setParam(effectiveId, "edgeDetect", { invert: e.target.checked })}
+          />
+        </Row>
+      </aside>
+    );
+  }
+
+  // ===== COMPOSITE OPS =====
+  if (kind === "over" || kind === "add" || kind === "multiply" || kind === "screen" || kind === "subtract") {
+    const p =
+      params && (params.kind === kind)
+        ? params
+        : ({ kind: kind as any, opacity: 1 } as any);
+
+    return (
+      <aside className="paramPane">
+        <div className="paramPane__title">{kind.toUpperCase()} (Composite)</div>
+
+        <Row label="Opacity">
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.01}
+            value={p.opacity}
+            onChange={(e) => setParam(effectiveId, kind as any, { opacity: Number(e.target.value) } as any)}
+          />
+          <span className="paramPane__value">{Number(p.opacity).toFixed(2)}</span>
+        </Row>
+
+        <div className="paramPane__hint">입력: a / b</div>
+      </aside>
+    );
+  }
+
+  // ===== OUTPUT =====
   if (kind === "output") {
     const p = params && params.kind === "output" ? params : { kind: "output" as const, exposure: 1 };
 
@@ -197,6 +489,59 @@ export default function ParamPane({ nodeId }: Props) {
           <span className="paramPane__value">{p.exposure.toFixed(2)}</span>
         </Row>
 
+        <div className="paramPane__hint">입력: in</div>
+      </aside>
+    );
+  }
+
+  // ===== CHOP (간단 표시만) =====
+  if (kind === "audioIn") {
+    const p = params && params.kind === "audioIn" ? params : { kind: "audioIn" as const, gain: 1 };
+    return (
+      <aside className="paramPane">
+        <div className="paramPane__title">Audio In (CHOP)</div>
+        <Row label="Gain">
+          <input
+            type="range"
+            min={0}
+            max={5}
+            step={0.01}
+            value={p.gain}
+            onChange={(e) => setParam(effectiveId, "audioIn", { gain: Number(e.target.value) })}
+          />
+          <span className="paramPane__value">{p.gain.toFixed(2)}</span>
+        </Row>
+      </aside>
+    );
+  }
+
+  if (kind === "fft") {
+    const p = params && params.kind === "fft" ? params : { kind: "fft" as const, smoothing: 0.85, intensity: 1 };
+    return (
+      <aside className="paramPane">
+        <div className="paramPane__title">FFT (CHOP)</div>
+        <Row label="Smoothing">
+          <input
+            type="range"
+            min={0}
+            max={0.99}
+            step={0.01}
+            value={p.smoothing}
+            onChange={(e) => setParam(effectiveId, "fft", { smoothing: Number(e.target.value) })}
+          />
+          <span className="paramPane__value">{p.smoothing.toFixed(2)}</span>
+        </Row>
+        <Row label="Intensity">
+          <input
+            type="range"
+            min={0}
+            max={3}
+            step={0.01}
+            value={p.intensity}
+            onChange={(e) => setParam(effectiveId, "fft", { intensity: Number(e.target.value) })}
+          />
+          <span className="paramPane__value">{p.intensity.toFixed(2)}</span>
+        </Row>
         <div className="paramPane__hint">입력: in</div>
       </aside>
     );

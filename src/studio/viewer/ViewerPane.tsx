@@ -40,6 +40,23 @@ export default function ViewerPane({ placement = "background" }: Props) {
     registerViewerCanvas(viewRef.current);
     return () => registerViewerCanvas(null);
   }, [placement, registerViewerCanvas]);
+  // ViewerPane.tsx background용 useEffect에 임시
+  useEffect(() => {
+    if (placement !== "background") return;
+    const t = setInterval(() => {
+      const c = viewRef.current;
+      if (!c) return;
+      const cs = getComputedStyle(c);
+      const r = c.getBoundingClientRect();
+      console.log("[DBG viewerCanvas]", {
+        client: [c.clientWidth, c.clientHeight],
+        rect: [Math.round(r.width), Math.round(r.height)],
+        cssH: cs.height,
+        buf: [c.width, c.height],
+      });
+    }, 500);
+    return () => clearInterval(t);
+  }, [placement]);
 
   // ✅ HUD placement: keyboard shortcuts
   useEffect(() => {
@@ -66,9 +83,15 @@ export default function ViewerPane({ placement = "background" }: Props) {
 
   if (placement === "background") {
     return (
-      <div className={`viewerBackdrop viewerBackdrop--bg ${viewerEnabled ? "isOn" : "isOff"}`}>
+      <div
+        className={`viewerBackdrop viewerBackdrop--bg ${viewerEnabled ? "isOn" : "isOff"}`}
+      >
         {/* ✅ runtime이 여기로 직접 렌더 */}
-        <canvas ref={viewRef} className="viewerBackdrop__canvas" style={{ opacity: viewerOpacity }} />
+        <canvas
+          ref={viewRef}
+          className="viewerBackdrop__canvas"
+          style={{ opacity: viewerOpacity }}
+        />
       </div>
     );
   }
@@ -87,7 +110,10 @@ export default function ViewerPane({ placement = "background" }: Props) {
 
         <div className="viewerBackdrop__sep" />
 
-        <button className={`viewerBackdrop__btn ${viewerEnabled ? "isOn" : ""}`} onClick={toggleViewer}>
+        <button
+          className={`viewerBackdrop__btn ${viewerEnabled ? "isOn" : ""}`}
+          onClick={toggleViewer}
+        >
           {viewerEnabled ? "On" : "Off"}
         </button>
 
@@ -111,11 +137,19 @@ export default function ViewerPane({ placement = "background" }: Props) {
 
         <div className="viewerBackdrop__sep" />
 
-        <button className="viewerBackdrop__btn" onClick={() => setViewerOpacity(viewerOpacity - 0.03)}>
+        <button
+          className="viewerBackdrop__btn"
+          onClick={() => setViewerOpacity(viewerOpacity - 0.03)}
+        >
           −
         </button>
-        <span className="viewerBackdrop__pill">Opacity {Math.round(viewerOpacity * 100)}%</span>
-        <button className="viewerBackdrop__btn" onClick={() => setViewerOpacity(viewerOpacity + 0.03)}>
+        <span className="viewerBackdrop__pill">
+          Opacity {Math.round(viewerOpacity * 100)}%
+        </span>
+        <button
+          className="viewerBackdrop__btn"
+          onClick={() => setViewerOpacity(viewerOpacity + 0.03)}
+        >
           +
         </button>
       </div>
@@ -135,7 +169,10 @@ function ModeBtn({
   onSet: (m: ViewerMode) => void;
 }) {
   return (
-    <button className={`viewerBackdrop__btn ${cur === mode ? "isOn" : ""}`} onClick={() => onSet(mode)}>
+    <button
+      className={`viewerBackdrop__btn ${cur === mode ? "isOn" : ""}`}
+      onClick={() => onSet(mode)}
+    >
       {mode}
     </button>
   );

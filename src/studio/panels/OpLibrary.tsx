@@ -10,8 +10,21 @@ export default function OpLibrary() {
     () => [
       // TOP
       { kind: "noise", label: "noise", group: "TOP", enabled: true },
+      { kind: "constant", label: "constant", group: "TOP", enabled: true },
       { kind: "ramp", label: "ramp", group: "TOP", enabled: true },
       { kind: "lookup", label: "lookup", group: "TOP", enabled: true },
+      { kind: "transform", label: "transform", group: "TOP", enabled: true },
+      { kind: "level", label: "level", group: "TOP", enabled: true },
+      { kind: "hsvAdjust", label: "hsvAdjust", group: "TOP", enabled: true },
+      { kind: "blur", label: "blur", group: "TOP", enabled: true },
+      { kind: "edgeDetect", label: "edgeDetect", group: "TOP", enabled: true },
+
+      // COMPOSITE
+      { kind: "over", label: "over", group: "COMPOSITE", enabled: true },
+      { kind: "add", label: "add", group: "COMPOSITE", enabled: true },
+      { kind: "multiply", label: "multiply", group: "COMPOSITE", enabled: true },
+      { kind: "screen", label: "screen", group: "COMPOSITE", enabled: true },
+      { kind: "subtract", label: "subtract", group: "COMPOSITE", enabled: true },
 
       // CHOP
       { kind: "audioIn", label: "audioIn", group: "CHOP", enabled: true },

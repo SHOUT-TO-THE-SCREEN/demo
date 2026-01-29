@@ -29,9 +29,13 @@ class SafeBoundary extends React.Component<
     if (this.state.hasError) {
       return (
         <div style={{ padding: 16, color: "white" }}>
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>Visualizer crashed</div>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>
+            Visualizer crashed
+          </div>
           <div style={{ opacity: 0.8 }}>{this.state.message}</div>
-          <div style={{ opacity: 0.6, marginTop: 8 }}>콘솔(F12) 에러 로그를 확인하세요.</div>
+          <div style={{ opacity: 0.6, marginTop: 8 }}>
+            콘솔(F12) 에러 로그를 확인하세요.
+          </div>
         </div>
       );
     }
@@ -52,21 +56,17 @@ export default function VisualizerPage() {
         </aside>
 
         <main className="tdStudio__center">
-  {/* Background canvas (네트워크 뒤) */}
-  <ViewerPane placement="background" />
-
-  {/* Network (위) */}
-  <div className="tdStudio__networkLayer">
-    <SafeBoundary>
-      <NetworkEditor />
-    </SafeBoundary>
-  </div>
-
-  {/* HUD (네트워크 위, 클릭/키보드 담당) */}
-  <ViewerPane placement="hud" />
-</main>
-
-
+          {/* Background canvas (네트워크 뒤) */}
+          <ViewerPane placement="background" />
+          {/* Network (위) */}
+          <div className="tdStudio__networkLayer">
+            <SafeBoundary>
+              <NetworkEditor />
+            </SafeBoundary>
+          </div>
+          {/* HUD (네트워크 위, 클릭/키보드 담당) */}
+          <ViewerPane placement="hud" />
+        </main>
 
         <aside className="tdStudio__right">
           <ParamPane nodeId={selectedNodeId} />

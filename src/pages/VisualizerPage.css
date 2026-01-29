@@ -29,6 +29,7 @@
 
 /* 기존 유지 */
 .tdStudio__center{
+  overflow: hidden;
   min-height: 0;
   position: relative;
   background:
@@ -39,8 +40,42 @@
 
 /* ✅ 추가: NetworkEditor를 ViewerPane보다 위로 */
 .tdStudio__networkLayer{
-  position: relative;
+  position: absolute;
   z-index: 2;
   height: 100%;
   min-height: 0;
+}
+
+
+/* center를 레이어 기준점으로 */
+.tdStudio__center {
+  position: relative;
+  overflow: hidden;
+}
+
+/* 네트워크 레이어는 background보다 위 */
+.tdStudio__networkLayer {
+  position: relative;
+  z-index: 10;
+}
+
+/* ViewerPane background는 화면 고정 + 클릭 관여 안 함 */
+.viewerBackdrop,
+.viewerBackdrop__canvas {
+  pointer-events: none;
+}
+
+/* background placement를 class로 구분하고 있다면(권장) */
+.viewerPane--background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* HUD는 네트워크보다 위지만, 클릭을 받게/안 받게는 목적에 따라 조절 */
+.viewerPane--hud {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
 }

@@ -36,13 +36,9 @@ function makeId(prefix: string) {
 }
 
 function labelOf(kind: NodeKind) {
-  if (kind === "audioIn") return "audioIn";
-  if (kind === "fft") return "fft";
-  if (kind === "noise") return "noise";
-  if (kind === "ramp") return "ramp";
-  if (kind === "lookup") return "lookup";
-  return "output";
+  return kind;
 }
+
 
 type Snapshot = {
   nodes: TDNodeType[];
@@ -504,7 +500,7 @@ function NetworkEditorInner() {
   // =========================
   // Thumbnail runtime
   // =========================
-  usePreviewRuntime(nodes, edges);
+  usePreviewRuntime();
 
   return (
     <div className={`tdNet ${spaceDown ? "isPanning" : ""}`} ref={wrapperRef}>

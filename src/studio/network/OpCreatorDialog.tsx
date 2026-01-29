@@ -5,16 +5,30 @@ import "./opCreatorDialog.css";
 type OpDef = { kind: NodeKind; label: string; group: string; keywords: string[] };
 
 const OPS: OpDef[] = [
+  // TOP
   { kind: "noise", label: "Noise", group: "TOP", keywords: ["procedural", "texture"] },
+  { kind: "constant", label: "Constant", group: "TOP", keywords: ["solid", "color"] },
   { kind: "ramp", label: "Ramp", group: "TOP", keywords: ["gradient", "lut"] },
   { kind: "lookup", label: "Lookup", group: "TOP", keywords: ["map", "colorize"] },
+  { kind: "transform", label: "Transform", group: "TOP", keywords: ["move", "rotate", "scale"] },
+  { kind: "level", label: "Level", group: "TOP", keywords: ["brightness", "contrast", "gamma"] },
+  { kind: "hsvAdjust", label: "HSV Adjust", group: "TOP", keywords: ["hue", "saturation", "value"] },
+  { kind: "blur", label: "Blur", group: "TOP", keywords: ["gaussian", "box"] },
+  { kind: "edgeDetect", label: "Edge Detect", group: "TOP", keywords: ["sobel", "edges"] },
 
+  // COMPOSITE
+  { kind: "over", label: "Over", group: "COMPOSITE", keywords: ["alpha", "blend"] },
+  { kind: "add", label: "Add", group: "COMPOSITE", keywords: ["plus"] },
+  { kind: "multiply", label: "Multiply", group: "COMPOSITE", keywords: ["mul"] },
+  { kind: "screen", label: "Screen", group: "COMPOSITE", keywords: ["lighten"] },
+  { kind: "subtract", label: "Subtract", group: "COMPOSITE", keywords: ["minus"] },
+
+  // CHOP
   { kind: "fft", label: "FFT", group: "CHOP", keywords: ["spectrum", "analysis"] },
   { kind: "audioIn", label: "Audio In", group: "CHOP", keywords: ["mic", "input"] },
 
+  // OUT
   { kind: "output", label: "Output", group: "OUT", keywords: ["display"] },
-
-  
 ];
 
 type Props = {
@@ -30,6 +44,7 @@ type Props = {
 
 const GROUP_ORDER: Record<string, number> = {
   TOP: 10,
+  COMPOSITE: 15,
   CHOP: 20,
   SOP: 30,
   DAT: 40,
@@ -65,7 +80,6 @@ export default function OpCreatorDialog({
 
   const [activeGroup, setActiveGroup] = useState<GroupTab>("ALL");
 
-  // 다이얼로그 열릴 때: 포커스 + 탭 초기화(원하면 "TOP"으로 변경 가능)
   useEffect(() => {
     if (!isVisible) return;
     setActiveGroup("ALL");
@@ -73,31 +87,23 @@ export default function OpCreatorDialog({
     queueMicrotask(() => inputRef.current?.focus());
   }, [isVisible, onSelectIndex]);
 
-  // 탭 메타(그룹 목록 + 카운트)
   const tabs = useMemo(() => {
     const counts = new Map<string, number>();
     for (const d of OPS) counts.set(d.group, (counts.get(d.group) ?? 0) + 1);
 
     const groups = Array.from(counts.keys()).sort((a, b) => groupRank(a) - groupRank(b));
 
-    const items: Array<{ key: GroupTab; label: string; count: number }> = [
-      { key: "ALL", label: "ALL", count: OPS.length },
+    return [
+      { key: "ALL" as const, label: "ALL", count: OPS.length },
       ...groups.map((g) => ({ key: g, label: g, count: counts.get(g) ?? 0 })),
     ];
-
-    return items;
   }, []);
 
-  // 탭 + 검색 반영하여 표시 리스트 산출
   const filteredItems = useMemo(() => {
     const q = query.trim().toLowerCase();
+    const base = activeGroup === "ALL" ? OPS : OPS.filter((d) => d.group === activeGroup);
 
-    const base =
-      activeGroup === "ALL" ? OPS : OPS.filter((d) => d.group === activeGroup);
-
-    if (!q) {
-      return [...base].sort((a, b) => a.label.localeCompare(b.label));
-    }
+    if (!q) return [...base].sort((a, b) => a.label.localeCompare(b.label));
 
     const out = base.filter((d) => {
       const hay = `${d.label} ${d.group} ${d.kind} ${d.keywords.join(" ")}`.toLowerCase();
@@ -107,14 +113,12 @@ export default function OpCreatorDialog({
     return [...out].sort((a, b) => a.label.localeCompare(b.label));
   }, [activeGroup, query]);
 
-  // 탭/검색이 바뀌면 선택 인덱스를 안정화
   const safeIndex = useMemo(() => {
     if (filteredItems.length === 0) return 0;
     return clamp(selectedIndex, 0, filteredItems.length - 1);
   }, [filteredItems.length, selectedIndex]);
 
   useEffect(() => {
-    // 리스트가 줄었는데 selectedIndex가 밖이면 0으로 당김
     if (filteredItems.length === 0) {
       if (selectedIndex !== 0) onSelectIndex(0);
       return;
@@ -124,13 +128,9 @@ export default function OpCreatorDialog({
 
   const selected = filteredItems[safeIndex];
 
-  // ✅ 모든 Hook 이후 return null
   if (!isVisible) return null;
 
-  const style: React.CSSProperties = {
-    left: pos.x + 8,
-    top: pos.y + 8,
-  };
+  const style: React.CSSProperties = { left: pos.x + 8, top: pos.y + 8 };
 
   return (
     <div className="opCreatorOverlay" onClick={onClose}>
@@ -165,10 +165,11 @@ export default function OpCreatorDialog({
         role="dialog"
         aria-label="Create Operator"
       >
-        {/* 헤더: 검색 + 탭 */}
         <div className="opCreatorHeader">
           <div className="opCreatorSearchRow">
-            <div className="opCreatorSearchIcon" aria-hidden="true">⌕</div>
+            <div className="opCreatorSearchIcon" aria-hidden="true">
+              ⌕
+            </div>
             <input
               ref={inputRef}
               className="opCreatorInput"
@@ -200,71 +201,37 @@ export default function OpCreatorDialog({
                   setActiveGroup(t.key);
                   onSelectIndex(0);
                 }}
-                role="tab"
-                aria-selected={activeGroup === t.key}
               >
-                <span className="opCreatorTabLabel">{t.label}</span>
+                {t.label}
                 <span className="opCreatorTabCount">{t.count}</span>
               </button>
             ))}
           </div>
-
-          <div className="opCreatorHintRow">
-            <span className="opCreatorHint">
-              ↑↓ Move&nbsp;&nbsp;↵ Create&nbsp;&nbsp;Esc Close
-            </span>
-            <span className="opCreatorHintStrong">
-              {activeGroup === "ALL" ? "All Operators" : `${activeGroup} Operators`}
-            </span>
-          </div>
         </div>
 
-        {/* 리스트 */}
         <div className="opCreatorList" role="listbox" aria-label="Operators">
           {filteredItems.length === 0 ? (
-            <div className="opCreatorEmpty">
-              <div className="opCreatorEmptyTitle">No results</div>
-              <div className="opCreatorEmptyDesc">Try a different keyword or another tab.</div>
-            </div>
+            <div className="opCreatorEmpty">No operators.</div>
           ) : (
-            filteredItems.map((d, idx) => (
+            filteredItems.map((d, i) => (
               <div
                 key={`${d.group}:${d.kind}`}
-                className={`opCreatorItem ${idx === safeIndex ? "active" : ""}`}
+                className={`opCreatorItem ${i === safeIndex ? "selected" : ""}`}
                 role="option"
-                aria-selected={idx === safeIndex}
-                onMouseEnter={() => onSelectIndex(idx)}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  onPick(d.kind);
-                }}
+                aria-selected={i === safeIndex}
+                onMouseMove={() => onSelectIndex(i)}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => onPick(d.kind)}
               >
-                <div className="opCreatorLeft">
-                  <div className="opCreatorTitleLine">
-                    <span className="opCreatorItemLabel">{d.label}</span>
-                    <span className="opCreatorPill">{d.group}</span>
-                  </div>
-
-                  <div className="opCreatorItemSub">
-                    <span className="opCreatorMono">{d.kind}</span>
-                    {d.keywords.length > 0 && (
-                      <span className="opCreatorKeywords">
-                        {d.keywords.slice(0, 3).map((k) => (
-                          <span key={k} className="opCreatorKeyTag">
-                            {k}
-                          </span>
-                        ))}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="opCreatorRight" aria-hidden="true">
-                  <span className="opCreatorArrow">→</span>
-                </div>
+                <div className="opCreatorItemLabel">{d.label}</div>
+                <div className="opCreatorItemMeta">{d.group}</div>
               </div>
             ))
           )}
+        </div>
+
+        <div className="opCreatorFooter">
+          <div className="opCreatorHint">↑↓ 이동 · Enter 생성 · Esc 닫기</div>
         </div>
       </div>
     </div>
