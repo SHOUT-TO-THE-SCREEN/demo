@@ -1,6 +1,10 @@
 import { create } from "zustand";
 
-export type NodeKind = "audioIn" | "fft" | "noise" | "ramp" | "lookup" | "output";
+export type NodeKind =
+  | "audioIn" | "fft"
+  | "noise" | "ramp" | "lookup" | "output"
+  | "constant" | "transform" | "level" | "hsvAdjust" | "blur" | "edgeDetect"
+  | "over" | "add" | "multiply" | "screen" | "subtract";
 
 export type RampStop = { id: string; t: number; color: string };
 export type RampParams = { kind: "ramp"; stops: RampStop[]; interpolation: "linear" | "smoothstep" };
@@ -11,7 +15,15 @@ export type NodeParams =
   | { kind: "noise"; seed: number; scale: number; speed: number; contrast: number }
   | RampParams
   | { kind: "lookup"; invert: boolean }
-  | { kind: "output"; exposure: number };
+  | { kind: "output"; exposure: number }
+  | { kind: "constant"; color: string }
+  | { kind: "transform"; tx: number; ty: number; rotate: number; scale: number }
+  | { kind: "level"; brightness: number; contrast: number; gamma: number }
+  | { kind: "hsvAdjust"; hue: number; saturation: number; value: number }
+  | { kind: "blur"; mode: "box" | "gaussian"; radius: number }
+  | { kind: "edgeDetect"; threshold: number; invert: boolean }
+  | { kind: "over" | "add" | "multiply" | "screen" | "subtract"; opacity: number };
+
 
 export type ViewerMode = "fit" | "fill" | "1:1";
 
@@ -89,6 +101,7 @@ function defaultParams(kind: NodeKind): NodeParams {
   if (kind === "audioIn") return { kind, gain: 1 };
   if (kind === "fft") return { kind, smoothing: 0.85, intensity: 1 };
   if (kind === "noise") return { kind, seed: 1, scale: 18, speed: 0.8, contrast: 1.2 };
+
   if (kind === "ramp")
     return {
       kind,
@@ -99,9 +112,25 @@ function defaultParams(kind: NodeKind): NodeParams {
         { id: "c", t: 1.0, color: "#ffffff" },
       ],
     };
+
   if (kind === "lookup") return { kind, invert: false };
-  return { kind, exposure: 1 };
+  if (kind === "output") return { kind, exposure: 1 };
+
+  if (kind === "constant") return { kind, color: "#000000" };
+  if (kind === "transform") return { kind, tx: 0, ty: 0, rotate: 0, scale: 1 };
+  if (kind === "level") return { kind, brightness: 0, contrast: 1, gamma: 1 };
+  if (kind === "hsvAdjust") return { kind, hue: 0, saturation: 1, value: 1 };
+  if (kind === "blur") return { kind, mode: "gaussian", radius: 4 };
+  if (kind === "edgeDetect") return { kind, threshold: 0, invert: false };
+
+  // Composite
+  if (kind === "over" || kind === "add" || kind === "multiply" || kind === "screen" || kind === "subtract")
+    return { kind, opacity: 1 };
+
+  // 안전망(여기까지 오면 output로 처리)
+  return { kind: "output", exposure: 1 };
 }
+
 
 export const useStudioStore = create<StudioState>((set, get) => ({
   // selection defaults

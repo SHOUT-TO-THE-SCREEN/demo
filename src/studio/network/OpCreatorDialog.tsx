@@ -13,6 +13,8 @@ const OPS: OpDef[] = [
   { kind: "audioIn", label: "Audio In", group: "CHOP", keywords: ["mic", "input"] },
 
   { kind: "output", label: "Output", group: "OUT", keywords: ["display"] },
+
+  
 ];
 
 type Props = {
