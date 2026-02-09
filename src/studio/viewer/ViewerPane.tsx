@@ -84,7 +84,7 @@ export default function ViewerPane({ placement = "background" }: Props) {
   if (placement === "background") {
     return (
       <div
-        className={`viewerBackdrop viewerBackdrop--bg ${viewerEnabled ? "isOn" : "isOff"}`}
+        className={` viewerBackdrop--bg ${viewerEnabled ? "isOn" : "isOff"}`}
       >
         {/* ✅ runtime이 여기로 직접 렌더 */}
         <canvas
