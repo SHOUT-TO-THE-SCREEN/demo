@@ -11,6 +11,8 @@
   height: 10%;
 }
 
+
+
 .viewerBackdrop--bg {
   position: absolute;
   inset: 0;
@@ -21,7 +23,7 @@
 .viewerBackdrop__canvas {
   display: block;
   width: 100%;
-  height: 20%;        /* ❌ 100vh 제거 */
+  height: 20%;       
 }
 
 /* HUD는 네트워크 위 + 클릭 가능 */
