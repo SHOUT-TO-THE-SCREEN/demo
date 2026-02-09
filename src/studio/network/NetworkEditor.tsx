@@ -39,7 +39,6 @@ function labelOf(kind: NodeKind) {
   return kind;
 }
 
-
 type Snapshot = {
   nodes: TDNodeType[];
   edges: TDEdgeType[];

@@ -3,6 +3,8 @@ import { create } from "zustand";
 export type NodeKind =
   | "audioIn"
   | "fft"
+  | "mouseIn"
+  | "math"
   | "noise"
   | "ramp"
   | "lookup"
@@ -18,15 +20,13 @@ export type NodeKind =
   | "multiply"
   | "screen"
   | "subtract"
-  // ✅ TDNode에서 이미 비교 중인 kind들 (타입에 추가)
   | "null"
-  | "mouseIn"
   | "webcamIn"
   | "movieIn"
   | "videoDeviceIn";
 
 export type RampStop = { id: string; t: number; color: string };
-// ✅ ramp.ts에서 "smooth"를 쓰는 케이스 대비 alias 포함
+
 export type RampParams = {
   kind: "ramp";
   stops: RampStop[];
@@ -34,9 +34,40 @@ export type RampParams = {
 };
 
 export type NodeParams =
-  | { kind: "audioIn"; gain: number }
+  | {
+      kind: "audioIn";
+      numSamples: number;
+      gain: number;
+      channelMode: "mono" | "stereo";
+    }
   | { kind: "fft"; smoothing: number; intensity: number }
-  | { kind: "noise"; seed: number; scale: number; speed: number; contrast: number }
+  // ✅ CHOP
+  | {
+      kind: "mouseIn";
+      numSamples: number;
+      sampleRate: number;
+      mode: "hold" | "history";
+    }
+  | {
+      kind: "math";
+      tab: "multadd" | "range";
+      preAdd: number;
+      multiply: number;
+      postAdd: number;
+      fromLow: number;
+      fromHigh: number;
+      toLow: number;
+      toHigh: number;
+      clamp: boolean;
+    }
+  // ✅ TOP/ETC
+  | {
+      kind: "noise";
+      seed: number;
+      scale: number;
+      speed: number;
+      contrast: number;
+    }
   | RampParams
   | { kind: "lookup"; invert: boolean }
   | { kind: "output"; exposure: number }
@@ -46,17 +77,21 @@ export type NodeParams =
   | { kind: "hsvAdjust"; hue: number; saturation: number; value: number }
   | { kind: "blur"; mode: "box" | "gaussian"; radius: number }
   | { kind: "edgeDetect"; threshold: number; invert: boolean }
-  | { kind: "over" | "add" | "multiply" | "screen" | "subtract"; opacity: number }
-  // ✅ 신규/유틸 kind들
+  | {
+      kind: "over" | "add" | "multiply" | "screen" | "subtract";
+      opacity: number;
+    }
+  // ✅ 유틸/입력
   | { kind: "null" }
-  | { kind: "mouseIn"; smoothing: number }
   | { kind: "webcamIn"; deviceId: string | null }
   | { kind: "movieIn"; src: string; speed: number; loop: boolean }
   | { kind: "videoDeviceIn"; deviceId: string | null };
 
 export type ViewerMode = "fit" | "fill" | "1:1";
 
-type SpawnImpl = ((kind: NodeKind, clientX?: number, clientY?: number) => void) | null;
+type SpawnImpl =
+  | ((kind: NodeKind, clientX?: number, clientY?: number) => void)
+  | null;
 
 type StudioState = {
   selectedNodeId: string | null;
@@ -105,20 +140,46 @@ type StudioState = {
   setParam: <K extends NodeParams["kind"]>(
     id: string,
     kind: K,
-    patch: Partial<Extract<NodeParams, { kind: K }>>
+    patch: Partial<Extract<NodeParams, { kind: K }>>,
   ) => void;
 
   spawnImpl: SpawnImpl;
   setSpawnImpl: (impl: SpawnImpl) => void;
   spawnNode: (kind: NodeKind, clientX?: number, clientY?: number) => void;
 
-  registerPreviewCanvas: (nodeId: string, canvas: HTMLCanvasElement | null) => void;
+  registerPreviewCanvas: (
+    nodeId: string,
+    canvas: HTMLCanvasElement | null,
+  ) => void;
 };
 
+const clampOpacity = (v: number) =>
+  Math.min(0.6, Math.max(0.05, +v.toFixed(2)));
+
 function defaultParams(kind: NodeKind): NodeParams {
-  if (kind === "audioIn") return { kind, gain: 1 };
+  if (kind === "audioIn")
+    return { kind, numSamples: 256, gain: 1, channelMode: "mono" };
   if (kind === "fft") return { kind, smoothing: 0.85, intensity: 1 };
-  if (kind === "noise") return { kind, seed: 1, scale: 18, speed: 0.8, contrast: 1.2 };
+
+  // ✅ CHOP defaults
+  if (kind === "mouseIn")
+    return { kind, numSamples: 256, sampleRate: 60, mode: "history" };
+  if (kind === "math")
+    return {
+      kind,
+      tab: "multadd",
+      preAdd: 0,
+      multiply: 1,
+      postAdd: 0,
+      fromLow: 0,
+      fromHigh: 1,
+      toLow: 0,
+      toHigh: 1,
+      clamp: false,
+    };
+
+  if (kind === "noise")
+    return { kind, seed: 1, scale: 18, speed: 0.8, contrast: 1.2 };
 
   if (kind === "ramp")
     return {
@@ -132,6 +193,7 @@ function defaultParams(kind: NodeKind): NodeParams {
     };
 
   if (kind === "lookup") return { kind, invert: false };
+  if (kind === "output") return { kind, exposure: 1 };
 
   if (kind === "constant") return { kind, color: "#000000" };
   if (kind === "transform") return { kind, tx: 0, ty: 0, rotate: 0, scale: 1 };
@@ -140,12 +202,16 @@ function defaultParams(kind: NodeKind): NodeParams {
   if (kind === "blur") return { kind, mode: "gaussian", radius: 4 };
   if (kind === "edgeDetect") return { kind, threshold: 0, invert: false };
 
-  if (kind === "over" || kind === "add" || kind === "multiply" || kind === "screen" || kind === "subtract")
+  if (
+    kind === "over" ||
+    kind === "add" ||
+    kind === "multiply" ||
+    kind === "screen" ||
+    kind === "subtract"
+  )
     return { kind, opacity: 1 };
 
-  // ✅ 유틸/입력 노드 기본값
   if (kind === "null") return { kind };
-  if (kind === "mouseIn") return { kind, smoothing: 0.2 };
   if (kind === "webcamIn") return { kind, deviceId: null };
   if (kind === "movieIn") return { kind, src: "", speed: 1, loop: true };
   if (kind === "videoDeviceIn") return { kind, deviceId: null };
@@ -175,23 +241,17 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   toggleViewer: () => set((s) => ({ viewerEnabled: !s.viewerEnabled })),
 
   pinViewerToNode: (nodeId) =>
-    set({
-      viewerPinnedNodeId: nodeId,
-      viewerNodeId: nodeId,
-    }),
-  unpinViewer: () =>
-    set({
-      viewerPinnedNodeId: null,
-      viewerNodeId: null,
-    }),
+    set({ viewerPinnedNodeId: nodeId, viewerNodeId: nodeId }),
+  unpinViewer: () => set({ viewerPinnedNodeId: null, viewerNodeId: null }),
 
   setViewerMode: (m) => set({ viewerMode: m }),
-  setViewerOpacity: (v) => set({ viewerOpacity: Math.min(0.6, Math.max(0.05, +v.toFixed(2))) }),
+  setViewerOpacity: (v) => set({ viewerOpacity: clampOpacity(v) }),
   setViewerFps: (fps) => set({ viewerFps: fps }),
 
   registerViewerCanvas: (canvas) => set({ viewerCanvas: canvas }),
 
-  setViewerNodeId: (nodeId) => set({ viewerNodeId: nodeId, viewerPinnedNodeId: null }),
+  setViewerNodeId: (nodeId) =>
+    set({ viewerNodeId: nodeId, viewerPinnedNodeId: null }),
   setDisplayNodeId: (nodeId) => set({ displayNodeId: nodeId }),
   toggleBypass: (nodeId) =>
     set((s) => {
@@ -204,24 +264,51 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   previewCanvasByNodeId: {},
 
   setSelectedNodeId: (id) => set({ selectedNodeId: id }),
-  setSelectedNodeIds: (ids) => set({ selectedNodeIds: ids, selectedNodeId: ids[0] ?? null }),
+  setSelectedNodeIds: (ids) =>
+    set({ selectedNodeIds: ids, selectedNodeId: ids[0] ?? null }),
   clearSelection: () => set({ selectedNodeIds: [], selectedNodeId: null }),
 
   setNodeKind: (id, kind) =>
-    set((s) => ({
-      nodeKindById: { ...s.nodeKindById, [id]: kind },
-    })),
+    set((s) => ({ nodeKindById: { ...s.nodeKindById, [id]: kind } })),
+
+  // studioStore.ts
 
   ensureNodeParams: (id, kind) =>
     set((s) => {
-      if (s.paramsById[id]) return s;
-      return { paramsById: { ...s.paramsById, [id]: defaultParams(kind) } };
+      const prev = s.paramsById[id];
+
+      // ✅ kind 기록은 항상 최신으로
+      const nextKindById =
+        s.nodeKindById[id] === kind
+          ? s.nodeKindById
+          : { ...s.nodeKindById, [id]: kind };
+
+      // ✅ params가 없으면 생성
+      if (!prev) {
+        return {
+          nodeKindById: nextKindById,
+          paramsById: { ...s.paramsById, [id]: defaultParams(kind) },
+        };
+      }
+
+      // ✅ params.kind가 다르면 교정 (병합/복사/초기화 꼬임 방지)
+      if (prev.kind !== kind) {
+        return {
+          nodeKindById: nextKindById,
+          paramsById: { ...s.paramsById, [id]: defaultParams(kind) },
+        };
+      }
+
+      // ✅ 이미 정상
+      if (nextKindById === s.nodeKindById) return s;
+      return { nodeKindById: nextKindById };
     }),
 
   setParam: (id, kind, patch) =>
     set((s) => {
       const prev = s.paramsById[id];
-      const base = prev && prev.kind === kind ? prev : defaultParams(kind as any);
+      const base =
+        prev && prev.kind === kind ? prev : defaultParams(kind as any);
       return {
         paramsById: {
           ...s.paramsById,

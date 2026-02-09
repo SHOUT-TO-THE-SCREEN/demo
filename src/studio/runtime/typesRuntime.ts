@@ -1,7 +1,7 @@
 import type { NodeKind, NodeParams } from "../state/studioStore";
 
 export type EvalCtx = {
-  now: number; // performance.now()
+  now: number;
   w: number;
   h: number;
   cache: Map<string, HTMLCanvasElement>;

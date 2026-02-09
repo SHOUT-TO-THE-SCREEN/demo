@@ -5,8 +5,6 @@ import { evalNoise } from "./opsTop/noise";
 import { evalRamp } from "./opsTop/ramp";
 import { evalLookup } from "./opsTop/lookup";
 import { evalOutput } from "./opsTop/output";
-
-// 신규(추가 예정)
 import { evalConstant } from "./opsTop/constant";
 import { evalTransform } from "./opsTop/transform";
 import { evalLevel } from "./opsTop/level";

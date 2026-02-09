@@ -29,7 +29,9 @@ export default function OpLibrary() {
       // CHOP
       { kind: "audioIn", label: "audioIn", group: "CHOP", enabled: true },
       { kind: "fft", label: "fft", group: "CHOP", enabled: true },
-
+      { kind: "mouseIn", label: "mouseIn", group: "CHOP", enabled: true },
+      { kind: "math", label: "math", group: "CHOP", enabled: true },
+      
       // OUT
       { kind: "output", label: "output", group: "OUT", enabled: true },
 

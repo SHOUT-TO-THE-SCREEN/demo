@@ -18,7 +18,7 @@ export default function Topbar({ query, setQuery, viewMode, setViewMode, onOpenA
     <>
       {/* 상단 1열: 로고(좌) + Add File(우) */}
       <div className="topbar_list">
-        <button
+        <button   
           type="button"
           className="brand_list"
           onClick={() => navigate("/")}

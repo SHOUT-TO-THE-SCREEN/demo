@@ -26,6 +26,8 @@ const OPS: OpDef[] = [
   // CHOP
   { kind: "fft", label: "FFT", group: "CHOP", keywords: ["spectrum", "analysis"] },
   { kind: "audioIn", label: "Audio In", group: "CHOP", keywords: ["mic", "input"] },
+  { kind: "mouseIn", label: "Mouse In", group: "CHOP", keywords: ["mouse", "input", "pointer"] },
+  { kind: "math", label: "Math", group: "CHOP", keywords: ["math", "range", "map", "multiply", "add"] },
 
   // OUT
   { kind: "output", label: "Output", group: "OUT", keywords: ["display"] },

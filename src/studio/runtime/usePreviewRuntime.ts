@@ -4,6 +4,10 @@ import { useStudioStore } from "../state/studioStore";
 import { TOP_REGISTRY } from "./registryTop";
 import type { EvalCtx, EvalTOP } from "./typesRuntime";
 
+import { beginChopFrame, evalChop } from "./opsChop/evalChop";
+import { renderChopPreview } from "./opsChop/renderChopPreview";
+import { bindMouseW, bindMouseWindow } from "./input/mouse";
+
 function buildInputMap(edges: any[]) {
   const map: Record<string, Record<string, string>> = {};
   for (const e of edges) {
@@ -26,7 +30,13 @@ function ensureCanvasSize(c: HTMLCanvasElement) {
   return { w, h };
 }
 
-function drawFit(g: CanvasRenderingContext2D, src: HTMLCanvasElement, dw: number, dh: number, mode: "fit" | "fill" | "1:1") {
+function drawFit(
+  g: CanvasRenderingContext2D,
+  src: HTMLCanvasElement,
+  dw: number,
+  dh: number,
+  mode: "fit" | "fill" | "1:1",
+) {
   const sw = src.width || 1;
   const sh = src.height || 1;
 
@@ -48,12 +58,14 @@ export function usePreviewRuntime() {
   const rafRef = useRef<number | null>(null);
   const lastRef = useRef<number>(0);
 
-  // OP 내부에서 쓰는 캔버스 캐시(프레임 간 재사용)
   const canvasCacheRef = useRef<Map<string, HTMLCanvasElement>>(new Map());
+
+  const mouseUnbindRef = useRef<null | (() => void)>(null);
+  const mouseBoundCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     let alive = true;
-
+    const unbindWin = bindMouseWindow();
     const loop = (now: number) => {
       if (!alive) return;
 
@@ -65,10 +77,16 @@ export function usePreviewRuntime() {
       const edges = rf.getEdges();
       const inputMap = buildInputMap(edges);
 
-      // fps 표시(선택)
       if (dt > 0) s.setViewerFps(Math.round(1000 / dt));
 
-      // 프레임 내 eval memo
+      beginChopFrame();
+
+      if (s.viewerCanvas && mouseBoundCanvasRef.current !== s.viewerCanvas) {
+        if (mouseUnbindRef.current) mouseUnbindRef.current();
+        mouseUnbindRef.current = bindMouseW(s.viewerCanvas);
+        mouseBoundCanvasRef.current = s.viewerCanvas;
+      }
+
       const evalCache = new Map<string, HTMLCanvasElement | null>();
 
       const evalTOP: EvalTOP = (nodeId, w, h) => {
@@ -77,9 +95,9 @@ export function usePreviewRuntime() {
         const kind = s.nodeKindById[nodeId];
         if (!kind) return null;
 
-        // bypass: 입력을 그대로 통과
         if (s.bypassByNodeId[nodeId]) {
-          const passthruId = inputMap[nodeId]?.["in"] ?? inputMap[nodeId]?.["0"];
+          const passthruId =
+            inputMap[nodeId]?.["in"] ?? inputMap[nodeId]?.["0"];
           if (passthruId) {
             const out = evalTOP(passthruId, w, h);
             evalCache.set(nodeId, out);
@@ -111,7 +129,7 @@ export function usePreviewRuntime() {
         return out;
       };
 
-      // ===== Node preview draw =====
+      // Node preview
       for (const [nodeId, canvas] of Object.entries(s.previewCanvasByNodeId)) {
         if (!canvas) continue;
 
@@ -121,11 +139,24 @@ export function usePreviewRuntime() {
 
         g.clearRect(0, 0, w, h);
 
-        const out = evalTOP(nodeId, w, h);
-        if (out) g.drawImage(out, 0, 0, w, h);
+        const outTop = evalTOP(nodeId, w, h);
+        if (outTop) {
+          g.drawImage(outTop, 0, 0, w, h);
+        } else {
+          // CHOP 프리뷰는 노드 종류별로 렌더링 모드를 분기한다.
+          // - mouseIn: tx/ty 테이블
+          // - 그 외: 라인 프리뷰(채널을 tx/ty로 오해하지 않도록)
+          const kind = s.nodeKindById[nodeId];
+          const chop = evalChop(nodeId, inputMap);
+
+          // mouseIn, math는 table로 좌표/값이 보이게
+          renderChopPreview(chop, canvas, {
+            mode: kind === "mouseIn" || kind === "math" ? "table" : "line",
+          });
+        }
       }
 
-      // ===== Viewer draw =====
+      // Viewer
       if (s.viewerEnabled && s.viewerCanvas) {
         const canvas = s.viewerCanvas;
         const { w, h } = ensureCanvasSize(canvas);
@@ -133,10 +164,20 @@ export function usePreviewRuntime() {
         if (g) {
           g.clearRect(0, 0, w, h);
 
-          const targetNodeId = s.viewerNodeId ?? s.displayNodeId ?? s.selectedNodeId;
+          const targetNodeId =
+            s.viewerNodeId ?? s.displayNodeId ?? s.selectedNodeId;
           if (targetNodeId) {
-            const out = evalTOP(targetNodeId, w, h);
-            if (out) drawFit(g, out, w, h, s.viewerMode);
+            const outTop = evalTOP(targetNodeId, w, h);
+            if (outTop) {
+              drawFit(g, outTop, w, h, s.viewerMode);
+            } else {
+              const kind = s.nodeKindById[targetNodeId];
+              const chop = evalChop(targetNodeId, inputMap);
+
+              renderChopPreview(chop, canvas, {
+                mode: kind === "mouseIn" || kind === "math" ? "table" : "line",
+              });
+            }
           }
         }
       }
@@ -147,9 +188,14 @@ export function usePreviewRuntime() {
     rafRef.current = requestAnimationFrame(loop);
 
     return () => {
+      unbindWin();
       alive = false;
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
+
+      if (mouseUnbindRef.current) mouseUnbindRef.current();
+      mouseUnbindRef.current = null;
+      mouseBoundCanvasRef.current = null;
     };
   }, [rf]);
 }

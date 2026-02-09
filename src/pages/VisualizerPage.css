@@ -60,11 +60,11 @@
 }
 
 /* ViewerPane background는 화면 고정 + 클릭 관여 안 함 */
-.viewerBackdrop,
+/* .viewerBackdrop,
 .viewerBackdrop__canvas {
   pointer-events: none;
-}
-
+} */
+  
 /* background placement를 class로 구분하고 있다면(권장) */
 .viewerPane--background {
   position: absolute;

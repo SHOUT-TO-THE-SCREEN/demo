@@ -166,7 +166,7 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
               ...n,
               style: { ...(n.style ?? {}), width: nextW, height: nextH },
             };
-          })
+          }),
         );
       };
 
@@ -187,7 +187,10 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
         } catch {}
 
         if (activeResizeCleanup === cleanupFn) activeResizeCleanup = null;
-        if (typeof window !== "undefined" && window.__tdResizeCleanup === cleanupFn) {
+        if (
+          typeof window !== "undefined" &&
+          window.__tdResizeCleanup === cleanupFn
+        ) {
           window.__tdResizeCleanup = null;
         }
       };
@@ -202,14 +205,20 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
       activeResizeCleanup = cleanupFn;
       if (typeof window !== "undefined") window.__tdResizeCleanup = cleanupFn;
     },
-    [id, rf]
+    [id, rf],
   );
 
-  const isComposite = k === "over" || k === "add" || k === "multiply" || k === "screen" || k === "subtract";
+  const isComposite =
+    k === "over" ||
+    k === "add" ||
+    k === "multiply" ||
+    k === "screen" ||
+    k === "subtract";
   const isLookup = k === "lookup";
 
   const hasIn1 =
     k === "fft" ||
+    k === "math" ||
     k === "output" ||
     k === "null" ||
     k === "transform" ||
@@ -223,6 +232,7 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
     k === "mouseIn" ||
     k === "webcamIn" ||
     k === "fft" ||
+    k === "math" ||
     k === "noise" ||
     k === "ramp" ||
     k === "lookup" ||
@@ -237,8 +247,30 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
     k === "null" ||
     isComposite;
 
+  const setNodeKind = useStudioStore((s) => s.setNodeKind);
+
+  useEffect(() => {
+    setNodeKind(id, data.kind);
+    ensureNodeParams(id, data.kind);
+  }, [setNodeKind, ensureNodeParams, id, data.kind]);
+  useEffect(() => {
+    const s = useStudioStore.getState();
+    console.log(
+      "[kind-check]",
+      id,
+      "data.kind=",
+      data.kind,
+      "params.kind=",
+      s.paramsById[id]?.kind,
+      "nodeKindById=",
+      s.nodeKindById[id],
+    );
+  }, [id, data.kind]);
   return (
-    <div ref={rootRef} className={`tdNode ${selected ? "tdNode--selected" : ""}`}>
+    <div
+      ref={rootRef}
+      className={`tdNode ${selected ? "tdNode--selected" : ""}`}
+    >
       {/* Header (CSS: tdNode__hdr / tdNode__hdrLeft / tdNode__tag / tdNode__title) */}
       <div className="tdNode__hdr" onPointerDown={stop}>
         <div className="tdNode__hdrLeft">
@@ -255,15 +287,27 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
             👁
           </button>
 
-          <button className={`tdNode__flagBtn ${isD ? "isOn" : ""}`} title="Display Flag (D)" onClick={onToggleD}>
+          <button
+            className={`tdNode__flagBtn ${isD ? "isOn" : ""}`}
+            title="Display Flag (D)"
+            onClick={onToggleD}
+          >
             D
           </button>
 
-          <button className={`tdNode__flagBtn ${isV ? "isOn" : ""}`} title="Viewer Flag (V)" onClick={onToggleV}>
+          <button
+            className={`tdNode__flagBtn ${isV ? "isOn" : ""}`}
+            title="Viewer Flag (V)"
+            onClick={onToggleV}
+          >
             V
           </button>
 
-          <button className={`tdNode__flagBtn ${isB ? "isOn" : ""}`} title="Bypass Flag (B)" onClick={onToggleB}>
+          <button
+            className={`tdNode__flagBtn ${isB ? "isOn" : ""}`}
+            title="Bypass Flag (B)"
+            onClick={onToggleB}
+          >
             B
           </button>
         </div>
@@ -275,12 +319,22 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
       </div>
 
       {/* Resize */}
-      <div className="tdNode__resizeHandle" title="Resize" onPointerDown={onResizePointerDown} />
+      <div
+        className="tdNode__resizeHandle"
+        title="Resize"
+        onPointerDown={onResizePointerDown}
+      />
 
       {/* Inputs */}
       {isLookup && (
         <>
-          <Handle id="in" type="target" position={Position.Left} className="tdHandle tdHandle--in" style={{ top: "38%" }} />
+          <Handle
+            id="in"
+            type="target"
+            position={Position.Left}
+            className="tdHandle tdHandle--in"
+            style={{ top: "38%" }}
+          />
           <Handle
             id="lut"
             type="target"
@@ -293,17 +347,41 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
 
       {isComposite && (
         <>
-          <Handle id="a" type="target" position={Position.Left} className="tdHandle tdHandle--in" style={{ top: "38%" }} />
-          <Handle id="b" type="target" position={Position.Left} className="tdHandle tdHandle--in" style={{ top: "72%" }} />
+          <Handle
+            id="a"
+            type="target"
+            position={Position.Left}
+            className="tdHandle tdHandle--in"
+            style={{ top: "38%" }}
+          />
+          <Handle
+            id="b"
+            type="target"
+            position={Position.Left}
+            className="tdHandle tdHandle--in"
+            style={{ top: "72%" }}
+          />
         </>
       )}
 
       {hasIn1 && !isComposite && !isLookup && (
-        <Handle id="in" type="target" position={Position.Left} className="tdHandle tdHandle--in" />
+        <Handle
+          id="in"
+          type="target"
+          position={Position.Left}
+          className="tdHandle tdHandle--in"
+        />
       )}
 
       {/* Outputs */}
-      {hasOut && <Handle id="out" type="source" position={Position.Right} className="tdHandle tdHandle--out" />}
+      {hasOut && (
+        <Handle
+          id="out"
+          type="source"
+          position={Position.Right}
+          className="tdHandle tdHandle--out"
+        />
+      )}
     </div>
   );
 }
