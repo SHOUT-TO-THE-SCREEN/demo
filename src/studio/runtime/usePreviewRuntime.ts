@@ -2,11 +2,79 @@ import { useEffect, useRef } from "react";
 import { useReactFlow } from "reactflow";
 import { useStudioStore } from "../state/studioStore";
 import { TOP_REGISTRY } from "./registryTop";
-import type { EvalCtx, EvalTOP } from "./typesRuntime";
+import { SOP_REGISTRY, SOP_KINDS } from "./registrySop";
+import type { EvalCtx, EvalTOP, EvalSOP, SopGeometry } from "./typesRuntime";
 
 import { beginChopFrame, evalChop } from "./opsChop/evalChop";
 import { renderChopPreview } from "./opsChop/renderChopPreview";
+import { renderSopPreview } from "./opsSop/renderSopPreview";
 import { bindMouseW, bindMouseWindow } from "./input/mouse";
+import type { NodeParams } from "../state/studioStore";
+
+// ─── CHOP drive helper ────────────────────────────────────────────────────────
+// Reads values from a CHOP connected via the "chop" handle and overrides params.
+//
+// Convention:
+//   transform  – ch0/ch1 are treated as normalized 0..1 position and scaled to
+//                ±(canvasW/2) and ±(canvasH/2) so that mouseIn "just works"
+//                without needing an intermediate math CHOP.
+//   noiseSop   – ch0 = mean of all samples (reacts to FFT band energy as well as
+//                last LFO/noise value), ch1 = last sample → frequency,
+//                ch2 = last sample → speed.
+function applyChopDrive(
+  nodeId: string,
+  params: NodeParams | undefined,
+  inputMap: Record<string, Record<string, string>>,
+  canvasW: number = 400,
+  canvasH: number = 400,
+): NodeParams | undefined {
+  const chopId = inputMap[nodeId]?.["chop"];
+  if (!chopId) return params;
+
+  const chop = evalChop(chopId, inputMap);
+  if (!chop || chop.channels.length === 0) return params;
+
+  // last sample of a channel (current value for time-series CHOPs)
+  const val = (ch: number) => {
+    const arr = chop.channels[ch];
+    return arr && arr.length > 0 ? arr[arr.length - 1] : undefined;
+  };
+
+  // max of all samples — for FFT: strongest frequency band energy; for LFO/noise: peak value
+  const valMax = (ch: number) => {
+    const arr = chop.channels[ch];
+    if (!arr || arr.length === 0) return undefined;
+    let max = 0;
+    for (let i = 0; i < arr.length; i++) if (arr[i] > max) max = arr[i];
+    return max;
+  };
+
+  if (!params) return params;
+
+  if (params.kind === "noiseSop") {
+    // valMax: FFT → peak band energy (0..1), LFO/noise → peak signal value (0..amplitude)
+    const v0 = valMax(0), v1 = val(1), v2 = val(2);
+    return {
+      ...params,
+      ...(v0 !== undefined && { amplitude: Math.max(0, v0) }),
+      ...(v1 !== undefined && { frequency: Math.max(0, v1) }),
+      ...(v2 !== undefined && { speed: Math.max(0, v2) }),
+    };
+  }
+
+  if (params.kind === "transform") {
+    // Treat ch0/ch1 as normalized 0..1 mouse/signal position.
+    // Scale to ±half-canvas so the image moves across the full viewer.
+    const v0 = val(0), v1 = val(1);
+    return {
+      ...params,
+      ...(v0 !== undefined && { tx: (v0 * 2 - 1) * (canvasW / 2) }),
+      ...(v1 !== undefined && { ty: (v1 * 2 - 1) * (canvasH / 2) }),
+    };
+  }
+
+  return params;
+}
 
 function buildInputMap(edges: any[]) {
   const map: Record<string, Record<string, string>> = {};
@@ -87,6 +155,27 @@ export function usePreviewRuntime() {
         mouseBoundCanvasRef.current = s.viewerCanvas;
       }
 
+      // ─── SOP evaluation ───────────────────────────────────────────────────
+      const sopCache = new Map<string, SopGeometry | null>();
+
+      const evalSOP: EvalSOP = (nodeId) => {
+        if (sopCache.has(nodeId)) return sopCache.get(nodeId)!;
+
+        const kind = s.nodeKindById[nodeId];
+        if (!kind) return null;
+
+        const op = SOP_REGISTRY[kind];
+        if (!op) return null;
+
+        const ctx: EvalCtx = { now, w: 0, h: 0, cache: canvasCacheRef.current };
+        const drivenParams = applyChopDrive(nodeId, s.paramsById[nodeId], inputMap);
+        const out = op({ nodeId, kind, params: drivenParams, evalSOP, inputMap, ctx });
+
+        sopCache.set(nodeId, out);
+        return out;
+      };
+
+      // ─── TOP evaluation ───────────────────────────────────────────────────
       const evalCache = new Map<string, HTMLCanvasElement | null>();
 
       const evalTOP: EvalTOP = (nodeId, w, h) => {
@@ -115,10 +204,11 @@ export function usePreviewRuntime() {
           cache: canvasCacheRef.current,
         };
 
+        const drivenParamsTOP = applyChopDrive(nodeId, s.paramsById[nodeId], inputMap, w, h);
         const out = op({
           nodeId,
           kind,
-          params: s.paramsById[nodeId],
+          params: drivenParamsTOP,
           evalTOP,
           inputMap,
           ctx,
@@ -129,9 +219,25 @@ export function usePreviewRuntime() {
         return out;
       };
 
-      // Node preview
+      // ─── Node preview thumbnails ──────────────────────────────────────────
       for (const [nodeId, canvas] of Object.entries(s.previewCanvasByNodeId)) {
         if (!canvas) continue;
+
+        const kind = s.nodeKindById[nodeId];
+
+        // SOP preview
+        if (kind && SOP_KINDS.has(kind)) {
+          ensureCanvasSize(canvas);
+          const geom = evalSOP(nodeId);
+          if (geom) {
+            const tint: [number, number, number] =
+              kind === "noiseSop" ? [200, 215, 230]
+              : kind === "gridSop" ? [180, 220, 200]
+              : [220, 220, 225];
+            renderSopPreview(geom, canvas, now, tint);
+          }
+          continue;
+        }
 
         const { w, h } = ensureCanvasSize(canvas);
         const g = canvas.getContext("2d", { willReadFrequently: false });
@@ -146,7 +252,6 @@ export function usePreviewRuntime() {
           // CHOP 프리뷰는 노드 종류별로 렌더링 모드를 분기한다.
           // - mouseIn: tx/ty 테이블
           // - 그 외: 라인 프리뷰(채널을 tx/ty로 오해하지 않도록)
-          const kind = s.nodeKindById[nodeId];
           const chop = evalChop(nodeId, inputMap);
 
           // mouseIn, math는 table로 좌표/값이 보이게
@@ -156,7 +261,7 @@ export function usePreviewRuntime() {
         }
       }
 
-      // Viewer
+      // ─── Viewer ───────────────────────────────────────────────────────────
       if (s.viewerEnabled && s.viewerCanvas) {
         const canvas = s.viewerCanvas;
         const { w, h } = ensureCanvasSize(canvas);
@@ -167,16 +272,28 @@ export function usePreviewRuntime() {
           const targetNodeId =
             s.viewerNodeId ?? s.displayNodeId ?? s.selectedNodeId;
           if (targetNodeId) {
-            const outTop = evalTOP(targetNodeId, w, h);
-            if (outTop) {
-              drawFit(g, outTop, w, h, s.viewerMode);
-            } else {
-              const kind = s.nodeKindById[targetNodeId];
-              const chop = evalChop(targetNodeId, inputMap);
+            const kind = s.nodeKindById[targetNodeId];
 
-              renderChopPreview(chop, canvas, {
-                mode: kind === "mouseIn" || kind === "math" ? "table" : "line",
-              });
+            // SOP viewer
+            if (kind && SOP_KINDS.has(kind)) {
+              const geom = evalSOP(targetNodeId);
+              if (geom) {
+                const tint: [number, number, number] =
+                  kind === "noiseSop" ? [200, 215, 230]
+                  : kind === "gridSop" ? [180, 220, 200]
+                  : [220, 220, 225];
+                renderSopPreview(geom, canvas, now, tint);
+              }
+            } else {
+              const outTop = evalTOP(targetNodeId, w, h);
+              if (outTop) {
+                drawFit(g, outTop, w, h, s.viewerMode);
+              } else {
+                const chop = evalChop(targetNodeId, inputMap);
+                renderChopPreview(chop, canvas, {
+                  mode: kind === "mouseIn" || kind === "math" ? "table" : "line",
+                });
+              }
             }
           }
         }

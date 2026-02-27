@@ -23,7 +23,15 @@ export type NodeKind =
   | "null"
   | "webcamIn"
   | "movieIn"
-  | "videoDeviceIn";
+  | "videoDeviceIn"
+  // ─── SOP ────────────────────────────────────────────────────────────────
+  | "sphereSop"
+  | "gridSop"
+  | "noiseSop"
+  // ─── CHOP (generators) ──────────────────────────────────────────────────
+  | "noiseCh"
+  | "lfo"
+  | "movieAudioIn";
 
 export type RampStop = { id: string; t: number; color: string };
 
@@ -85,7 +93,15 @@ export type NodeParams =
   | { kind: "null" }
   | { kind: "webcamIn"; deviceId: string | null }
   | { kind: "movieIn"; src: string; speed: number; loop: boolean }
-  | { kind: "videoDeviceIn"; deviceId: string | null };
+  | { kind: "videoDeviceIn"; deviceId: string | null }
+  // ─── SOP ────────────────────────────────────────────────────────────────
+  | { kind: "sphereSop"; radius: number; rows: number; cols: number }
+  | { kind: "gridSop"; width: number; height: number; rows: number; cols: number }
+  | { kind: "noiseSop"; amplitude: number; frequency: number; speed: number; seed: number }
+  // ─── CHOP generators ────────────────────────────────────────────────────
+  | { kind: "noiseCh"; seed: number; period: number; amplitude: number; numChannels: number; numSamples: number }
+  | { kind: "lfo"; waveform: "sine" | "square" | "ramp" | "triangle"; frequency: number; amplitude: number; offset: number; numSamples: number }
+  | { kind: "movieAudioIn"; src: string; gain: number; numSamples: number; loop: boolean };
 
 export type ViewerMode = "fit" | "fill" | "1:1";
 
@@ -215,6 +231,16 @@ function defaultParams(kind: NodeKind): NodeParams {
   if (kind === "webcamIn") return { kind, deviceId: null };
   if (kind === "movieIn") return { kind, src: "", speed: 1, loop: true };
   if (kind === "videoDeviceIn") return { kind, deviceId: null };
+
+  // ─── SOP defaults ───────────────────────────────────────────────────────
+  if (kind === "sphereSop") return { kind, radius: 1.0, rows: 20, cols: 20 };
+  if (kind === "gridSop") return { kind, width: 2.0, height: 2.0, rows: 20, cols: 20 };
+  if (kind === "noiseSop") return { kind, amplitude: 0.3, frequency: 2.5, speed: 0.5, seed: 0 };
+
+  // ─── CHOP generator defaults ────────────────────────────────────────────
+  if (kind === "noiseCh") return { kind, seed: 0, period: 1, amplitude: 1, numChannels: 1, numSamples: 120 };
+  if (kind === "lfo") return { kind, waveform: "sine", frequency: 1, amplitude: 1, offset: 0, numSamples: 120 };
+  if (kind === "movieAudioIn") return { kind, src: "", gain: 1, numSamples: 256, loop: true };
 
   // fallback
   return { kind: "output", exposure: 1 };

@@ -28,6 +28,14 @@ const OPS: OpDef[] = [
   { kind: "audioIn", label: "Audio In", group: "CHOP", keywords: ["mic", "input"] },
   { kind: "mouseIn", label: "Mouse In", group: "CHOP", keywords: ["mouse", "input", "pointer"] },
   { kind: "math", label: "Math", group: "CHOP", keywords: ["math", "range", "map", "multiply", "add"] },
+  { kind: "noiseCh", label: "Noise", group: "CHOP", keywords: ["noise", "random", "animate"] },
+  { kind: "lfo", label: "LFO", group: "CHOP", keywords: ["oscillator", "sine", "wave", "animate"] },
+  { kind: "movieAudioIn", label: "Movie Audio In", group: "CHOP", keywords: ["video", "mp4", "audio", "file", "movie"] },
+
+  // SOP
+  { kind: "sphereSop", label: "Sphere", group: "SOP", keywords: ["geometry", "mesh", "3d"] },
+  { kind: "gridSop", label: "Grid", group: "SOP", keywords: ["plane", "grid", "mesh", "terrain", "wave", "3d"] },
+  { kind: "noiseSop", label: "Noise", group: "SOP", keywords: ["deform", "displace", "animate", "3d"] },
 
   // OUT
   { kind: "output", label: "Output", group: "OUT", keywords: ["display"] },

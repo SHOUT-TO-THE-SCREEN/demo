@@ -31,7 +31,15 @@ export default function OpLibrary() {
       { kind: "fft", label: "fft", group: "CHOP", enabled: true },
       { kind: "mouseIn", label: "mouseIn", group: "CHOP", enabled: true },
       { kind: "math", label: "math", group: "CHOP", enabled: true },
+      { kind: "noiseCh", label: "noiseCh", group: "CHOP", enabled: true },
+      { kind: "lfo", label: "lfo", group: "CHOP", enabled: true },
+      { kind: "movieAudioIn", label: "movieAudioIn", group: "CHOP", enabled: true },
       
+      // SOP
+      { kind: "sphereSop", label: "sphereSop", group: "SOP", enabled: true },
+      { kind: "gridSop", label: "gridSop", group: "SOP", enabled: true },
+      { kind: "noiseSop", label: "noiseSop", group: "SOP", enabled: true },
+
       // OUT
       { kind: "output", label: "output", group: "OUT", enabled: true },
 

@@ -225,7 +225,8 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
     k === "level" ||
     k === "hsvAdjust" ||
     k === "blur" ||
-    k === "edgeDetect";
+    k === "edgeDetect" ||
+    k === "noiseSop";
 
   const hasOut =
     k === "audioIn" ||
@@ -245,7 +246,15 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
     k === "blur" ||
     k === "edgeDetect" ||
     k === "null" ||
+    k === "sphereSop" ||
+    k === "gridSop" ||
+    k === "noiseSop" ||
+    k === "noiseCh" ||
+    k === "lfo" ||
+    k === "movieAudioIn" ||
     isComposite;
+
+  const hasChopIn = k === "noiseSop" || k === "transform";
 
   const setNodeKind = useStudioStore((s) => s.setNodeKind);
 
@@ -370,6 +379,18 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
           type="target"
           position={Position.Left}
           className="tdHandle tdHandle--in"
+        />
+      )}
+
+      {/* CHOP drive input */}
+      {hasChopIn && (
+        <Handle
+          id="chop"
+          type="target"
+          position={Position.Left}
+          className="tdHandle tdHandle--chop"
+          style={{ top: "78%" }}
+          title="CHOP drive"
         />
       )}
 

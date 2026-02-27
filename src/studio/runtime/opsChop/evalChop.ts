@@ -4,6 +4,10 @@ import { makeChop } from "./types";
 import { evalMouseIn, type MouseInParams } from "./MouseIn";
 import { evalAudioInSync, type AudioInParams } from "./AudioIn";
 import { evalMath } from "./Math";
+import { evalNoiseCh } from "./noiseCh";
+import { evalLfo } from "./lfo";
+import { evalFftChop } from "./fft";
+import { evalMovieAudioIn } from "./movieAudioIn";
 const cache = new Map<string, Chop>();
 
 export function beginChopFrame() {
@@ -96,6 +100,53 @@ export function evalChop(nodeId: string, inputMap?: InputMap): Chop {
       };
 
       out = evalMath(inChop, p as any);
+      break;
+    }
+
+    case "noiseCh": {
+      const raw = params?.kind === "noiseCh" ? params : undefined;
+      out = evalNoiseCh({
+        seed: raw?.seed ?? 0,
+        period: raw?.period ?? 1,
+        amplitude: raw?.amplitude ?? 1,
+        numChannels: raw?.numChannels ?? 1,
+        numSamples: raw?.numSamples ?? 120,
+      });
+      break;
+    }
+
+    case "lfo": {
+      const raw = params?.kind === "lfo" ? params : undefined;
+      out = evalLfo({
+        waveform: raw?.waveform ?? "sine",
+        frequency: raw?.frequency ?? 1,
+        amplitude: raw?.amplitude ?? 1,
+        offset: raw?.offset ?? 0,
+        numSamples: raw?.numSamples ?? 120,
+      });
+      break;
+    }
+
+    case "fft": {
+      const inId = inputMap?.[nodeId]?.["in"] ?? inputMap?.[nodeId]?.["0"];
+      if (!inId) {
+        out = makeChop(0, 0, 60);
+        break;
+      }
+      const inChop = evalChop(inId, inputMap);
+      const raw = params?.kind === "fft" ? params : undefined;
+      out = evalFftChop(nodeId, inChop, raw?.smoothing ?? 0.85, raw?.intensity ?? 1);
+      break;
+    }
+
+    case "movieAudioIn": {
+      const raw = params?.kind === "movieAudioIn" ? params : undefined;
+      out = evalMovieAudioIn(nodeId, {
+        src: raw?.src ?? "",
+        gain: raw?.gain ?? 1,
+        numSamples: raw?.numSamples ?? 256,
+        loop: raw?.loop ?? true,
+      });
       break;
     }
 

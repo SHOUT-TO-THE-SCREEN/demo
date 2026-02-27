@@ -158,3 +158,28 @@
 .tdNode__resizeHandle:active{
   background: rgba(255, 255, 255, 0.20);
 }
+
+/* =========================
+   Handles (ReactFlow)
+========================= */
+.tdHandle {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid rgba(0,0,0,0.4);
+}
+
+.tdHandle--in {
+  background: rgba(160, 220, 180, 0.85);
+}
+
+.tdHandle--out {
+  background: rgba(220, 180, 100, 0.85);
+}
+
+.tdHandle--chop {
+  background: rgba(100, 160, 255, 0.90);
+  border-color: rgba(60, 120, 220, 0.6);
+  width: 8px;
+  height: 8px;
+}

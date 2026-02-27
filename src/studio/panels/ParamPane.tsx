@@ -1,6 +1,6 @@
 import "./paramPane.css";
 import { useStudioStore } from "../state/studioStore";
-import type { RampStop, RampParams, NodeKind } from "../state/studioStore";
+import type { RampStop, RampParams } from "../state/studioStore";
 
 type Props = {
   nodeId?: string | null;
@@ -330,6 +330,8 @@ export default function ParamPane({ nodeId }: Props) {
           />
           <span className="paramPane__value">{p.scale.toFixed(2)}</span>
         </Row>
+
+        <div className="paramPane__hint">CHOP drive (파란 핸들): ch0(0~1)→tx · ch1(0~1)→ty<br/>mouseIn → transform: 마우스가 전체 화면 범위로 이미지를 이동</div>
       </aside>
     );
   }
@@ -930,6 +932,443 @@ export default function ParamPane({ nodeId }: Props) {
           <span className="paramPane__value">{p.intensity.toFixed(2)}</span>
         </Row>
         <div className="paramPane__hint">입력: in</div>
+      </aside>
+    );
+  }
+
+  // ===== NOISE CHOP =====
+  if (kind === "noiseCh") {
+    const p =
+      params && params.kind === "noiseCh"
+        ? params
+        : { kind: "noiseCh" as const, seed: 0, period: 1, amplitude: 1, numChannels: 1, numSamples: 120 };
+
+    return (
+      <aside className="paramPane">
+        <div className="paramPane__title">Noise CHOP</div>
+
+        <Row label="Amplitude">
+          <input
+            type="range"
+            min={0}
+            max={5}
+            step={0.01}
+            value={p.amplitude}
+            onChange={(e) =>
+              setParam(effectiveId, "noiseCh", { amplitude: Number(e.target.value) })
+            }
+          />
+          <span className="paramPane__value">{p.amplitude.toFixed(2)}</span>
+        </Row>
+
+        <Row label="Period">
+          <input
+            type="range"
+            min={0.05}
+            max={10}
+            step={0.05}
+            value={p.period}
+            onChange={(e) =>
+              setParam(effectiveId, "noiseCh", { period: Number(e.target.value) })
+            }
+          />
+          <span className="paramPane__value">{p.period.toFixed(2)}s</span>
+        </Row>
+
+        <Row label="Channels">
+          <input
+            type="range"
+            min={1}
+            max={4}
+            step={1}
+            value={p.numChannels}
+            onChange={(e) =>
+              setParam(effectiveId, "noiseCh", { numChannels: Number(e.target.value) })
+            }
+          />
+          <span className="paramPane__value">{p.numChannels}</span>
+        </Row>
+
+        <Row label="Samples">
+          <input
+            type="range"
+            min={1}
+            max={480}
+            step={1}
+            value={p.numSamples}
+            onChange={(e) =>
+              setParam(effectiveId, "noiseCh", { numSamples: Number(e.target.value) })
+            }
+          />
+          <span className="paramPane__value">{p.numSamples}</span>
+        </Row>
+
+        <Row label="Seed">
+          <input
+            className="paramPane__input"
+            type="number"
+            min={0}
+            max={99}
+            value={p.seed}
+            onChange={(e) =>
+              setParam(effectiveId, "noiseCh", { seed: Number(e.target.value) || 0 })
+            }
+          />
+        </Row>
+
+        <div className="paramPane__hint">ch0→amplitude · ch1→frequency · ch2→speed (SOP 드라이브)</div>
+      </aside>
+    );
+  }
+
+  // ===== LFO CHOP =====
+  if (kind === "lfo") {
+    const p =
+      params && params.kind === "lfo"
+        ? params
+        : { kind: "lfo" as const, waveform: "sine" as const, frequency: 1, amplitude: 1, offset: 0, numSamples: 120 };
+
+    return (
+      <aside className="paramPane">
+        <div className="paramPane__title">LFO CHOP</div>
+
+        <Row label="Waveform">
+          <select
+            className="paramPane__input"
+            value={p.waveform}
+            onChange={(e) =>
+              setParam(effectiveId, "lfo", { waveform: e.target.value as any })
+            }
+          >
+            <option value="sine">sine</option>
+            <option value="square">square</option>
+            <option value="ramp">ramp</option>
+            <option value="triangle">triangle</option>
+          </select>
+        </Row>
+
+        <Row label="Frequency">
+          <input
+            type="range"
+            min={0.01}
+            max={20}
+            step={0.01}
+            value={p.frequency}
+            onChange={(e) =>
+              setParam(effectiveId, "lfo", { frequency: Number(e.target.value) })
+            }
+          />
+          <span className="paramPane__value">{p.frequency.toFixed(2)} Hz</span>
+        </Row>
+
+        <Row label="Amplitude">
+          <input
+            type="range"
+            min={0}
+            max={5}
+            step={0.01}
+            value={p.amplitude}
+            onChange={(e) =>
+              setParam(effectiveId, "lfo", { amplitude: Number(e.target.value) })
+            }
+          />
+          <span className="paramPane__value">{p.amplitude.toFixed(2)}</span>
+        </Row>
+
+        <Row label="Offset">
+          <input
+            type="range"
+            min={-5}
+            max={5}
+            step={0.01}
+            value={p.offset}
+            onChange={(e) =>
+              setParam(effectiveId, "lfo", { offset: Number(e.target.value) })
+            }
+          />
+          <span className="paramPane__value">{p.offset.toFixed(2)}</span>
+        </Row>
+
+        <Row label="Samples">
+          <input
+            type="range"
+            min={1}
+            max={480}
+            step={1}
+            value={p.numSamples}
+            onChange={(e) =>
+              setParam(effectiveId, "lfo", { numSamples: Number(e.target.value) })
+            }
+          />
+          <span className="paramPane__value">{p.numSamples}</span>
+        </Row>
+
+        <div className="paramPane__hint">ch0→amplitude · ch1→frequency · ch2→speed (SOP 드라이브)</div>
+      </aside>
+    );
+  }
+
+  // ===== MOVIE AUDIO IN CHOP =====
+  if (kind === "movieAudioIn") {
+    const p =
+      params && params.kind === "movieAudioIn"
+        ? params
+        : { kind: "movieAudioIn" as const, src: "", gain: 1, numSamples: 256, loop: true };
+
+    return (
+      <aside className="paramPane">
+        <div className="paramPane__title">Movie Audio In (CHOP)</div>
+
+        <Row label="Src">
+          <input
+            className="paramPane__input"
+            type="text"
+            placeholder="URL or path to mp4/audio…"
+            value={p.src}
+            onChange={(e) =>
+              setParam(effectiveId, "movieAudioIn", { src: e.target.value })
+            }
+          />
+        </Row>
+
+        <Row label="Gain">
+          <input
+            type="range"
+            min={0}
+            max={5}
+            step={0.01}
+            value={p.gain}
+            onChange={(e) =>
+              setParam(effectiveId, "movieAudioIn", { gain: Number(e.target.value) })
+            }
+          />
+          <span className="paramPane__value">{p.gain.toFixed(2)}</span>
+        </Row>
+
+        <Row label="Samples">
+          <input
+            type="range"
+            min={32}
+            max={2048}
+            step={32}
+            value={p.numSamples}
+            onChange={(e) =>
+              setParam(effectiveId, "movieAudioIn", { numSamples: Number(e.target.value) })
+            }
+          />
+          <span className="paramPane__value">{p.numSamples}</span>
+        </Row>
+
+        <Row label="Loop">
+          <input
+            type="checkbox"
+            checked={p.loop}
+            onChange={(e) =>
+              setParam(effectiveId, "movieAudioIn", { loop: e.target.checked })
+            }
+          />
+        </Row>
+
+        <div className="paramPane__hint">MP4/오디오 URL → fft → noiseSop/transform 으로 음악 반응</div>
+      </aside>
+    );
+  }
+
+  // ===== GRID SOP =====
+  if (kind === "gridSop") {
+    const p =
+      params && params.kind === "gridSop"
+        ? params
+        : { kind: "gridSop" as const, width: 2.0, height: 2.0, rows: 20, cols: 20 };
+
+    return (
+      <aside className="paramPane">
+        <div className="paramPane__title">Grid SOP</div>
+
+        <Row label="Width">
+          <input
+            type="range"
+            min={0.1}
+            max={5}
+            step={0.1}
+            value={p.width}
+            onChange={(e) =>
+              setParam(effectiveId, "gridSop", { width: Number(e.target.value) })
+            }
+          />
+          <span className="paramPane__value">{p.width.toFixed(1)}</span>
+        </Row>
+
+        <Row label="Height">
+          <input
+            type="range"
+            min={0.1}
+            max={5}
+            step={0.1}
+            value={p.height}
+            onChange={(e) =>
+              setParam(effectiveId, "gridSop", { height: Number(e.target.value) })
+            }
+          />
+          <span className="paramPane__value">{p.height.toFixed(1)}</span>
+        </Row>
+
+        <Row label="Rows">
+          <input
+            type="range"
+            min={2}
+            max={80}
+            step={1}
+            value={p.rows}
+            onChange={(e) =>
+              setParam(effectiveId, "gridSop", { rows: Number(e.target.value) })
+            }
+          />
+          <span className="paramPane__value">{p.rows}</span>
+        </Row>
+
+        <Row label="Cols">
+          <input
+            type="range"
+            min={2}
+            max={80}
+            step={1}
+            value={p.cols}
+            onChange={(e) =>
+              setParam(effectiveId, "gridSop", { cols: Number(e.target.value) })
+            }
+          />
+          <span className="paramPane__value">{p.cols}</span>
+        </Row>
+
+        <div className="paramPane__hint">gridSop → noiseSop: 파도/지형 효과</div>
+      </aside>
+    );
+  }
+
+  // ===== SPHERE SOP =====
+  if (kind === "sphereSop") {
+    const p =
+      params && params.kind === "sphereSop"
+        ? params
+        : { kind: "sphereSop" as const, radius: 1.0, rows: 20, cols: 20 };
+
+    return (
+      <aside className="paramPane">
+        <div className="paramPane__title">Sphere SOP</div>
+
+        <Row label="Radius">
+          <input
+            type="range"
+            min={0.1}
+            max={3}
+            step={0.01}
+            value={p.radius}
+            onChange={(e) =>
+              setParam(effectiveId, "sphereSop", { radius: Number(e.target.value) })
+            }
+          />
+          <span className="paramPane__value">{p.radius.toFixed(2)}</span>
+        </Row>
+
+        <Row label="Rows">
+          <input
+            type="range"
+            min={3}
+            max={60}
+            step={1}
+            value={p.rows}
+            onChange={(e) =>
+              setParam(effectiveId, "sphereSop", { rows: Number(e.target.value) })
+            }
+          />
+          <span className="paramPane__value">{p.rows}</span>
+        </Row>
+
+        <Row label="Cols">
+          <input
+            type="range"
+            min={3}
+            max={60}
+            step={1}
+            value={p.cols}
+            onChange={(e) =>
+              setParam(effectiveId, "sphereSop", { cols: Number(e.target.value) })
+            }
+          />
+          <span className="paramPane__value">{p.cols}</span>
+        </Row>
+      </aside>
+    );
+  }
+
+  // ===== NOISE SOP =====
+  if (kind === "noiseSop") {
+    const p =
+      params && params.kind === "noiseSop"
+        ? params
+        : { kind: "noiseSop" as const, amplitude: 0.3, frequency: 2.5, speed: 0.5, seed: 0 };
+
+    return (
+      <aside className="paramPane">
+        <div className="paramPane__title">Noise SOP</div>
+
+        <Row label="Amplitude">
+          <input
+            type="range"
+            min={0}
+            max={2}
+            step={0.01}
+            value={p.amplitude}
+            onChange={(e) =>
+              setParam(effectiveId, "noiseSop", { amplitude: Number(e.target.value) })
+            }
+          />
+          <span className="paramPane__value">{p.amplitude.toFixed(2)}</span>
+        </Row>
+
+        <Row label="Frequency">
+          <input
+            type="range"
+            min={0.1}
+            max={10}
+            step={0.1}
+            value={p.frequency}
+            onChange={(e) =>
+              setParam(effectiveId, "noiseSop", { frequency: Number(e.target.value) })
+            }
+          />
+          <span className="paramPane__value">{p.frequency.toFixed(1)}</span>
+        </Row>
+
+        <Row label="Speed">
+          <input
+            type="range"
+            min={0}
+            max={3}
+            step={0.01}
+            value={p.speed}
+            onChange={(e) =>
+              setParam(effectiveId, "noiseSop", { speed: Number(e.target.value) })
+            }
+          />
+          <span className="paramPane__value">{p.speed.toFixed(2)}</span>
+        </Row>
+
+        <Row label="Seed">
+          <input
+            className="paramPane__input"
+            type="number"
+            min={0}
+            max={99}
+            value={p.seed}
+            onChange={(e) =>
+              setParam(effectiveId, "noiseSop", { seed: Number(e.target.value) || 0 })
+            }
+          />
+        </Row>
+
+        <div className="paramPane__hint">입력: in (Sphere SOP) · CHOP drive (파란 핸들): ch0→amplitude · ch1→frequency · ch2→speed<br/>lfo/noiseCh/fft/mouseIn 연결 가능</div>
       </aside>
     );
   }
