@@ -7,6 +7,7 @@ type OpDef = { kind: NodeKind; label: string; group: string; keywords: string[] 
 const OPS: OpDef[] = [
   // TOP
   { kind: "noise", label: "Noise", group: "TOP", keywords: ["procedural", "texture"] },
+  { kind: "textTop", label: "Text", group: "TOP", keywords: ["text", "font", "type", "label"] },
   { kind: "constant", label: "Constant", group: "TOP", keywords: ["solid", "color"] },
   { kind: "ramp", label: "Ramp", group: "TOP", keywords: ["gradient", "lut"] },
   { kind: "lookup", label: "Lookup", group: "TOP", keywords: ["map", "colorize"] },
@@ -31,6 +32,7 @@ const OPS: OpDef[] = [
   { kind: "noiseCh", label: "Noise", group: "CHOP", keywords: ["noise", "random", "animate"] },
   { kind: "lfo", label: "LFO", group: "CHOP", keywords: ["oscillator", "sine", "wave", "animate"] },
   { kind: "movieAudioIn", label: "Movie Audio In", group: "CHOP", keywords: ["video", "mp4", "audio", "file", "movie"] },
+  { kind: "handsChop", label: "Hands", group: "CHOP", keywords: ["hand", "webcam", "mediapipe", "tracking", "gesture"] },
 
   // SOP
   { kind: "sphereSop", label: "Sphere", group: "SOP", keywords: ["geometry", "mesh", "3d"] },

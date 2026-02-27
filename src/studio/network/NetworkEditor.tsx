@@ -20,6 +20,7 @@ import OpCreatorDialog from "./OpCreatorDialog";
 import { useStudioStore } from "../state/studioStore";
 import { usePreviewRuntime } from "../runtime/usePreviewRuntime";
 import type { NodeKind } from "../state/studioStore";
+import { cleanupMovieAudioIn } from "../runtime/opsChop/movieAudioIn";
 
 type TDNodeData = { label: string; kind: NodeKind };
 type TDNodeType = Node<TDNodeData>;
@@ -413,6 +414,11 @@ function NetworkEditorInner() {
     const s = useStudioStore.getState();
     if (ids.includes(s.viewerNodeId ?? "")) setViewerNodeId(null);
     if (ids.includes(s.displayNodeId ?? "")) setDisplayNodeId(null);
+
+    // movieAudioIn 노드 삭제 시 오디오 정지
+    for (const id of ids) {
+      if (s.nodeKindById[id] === "movieAudioIn") cleanupMovieAudioIn(id);
+    }
 
     setNodes((ns: TDNodeType[]) => ns.filter((n: TDNodeType) => !ids.includes(n.id)));
     setEdges((es: TDEdgeType[]) => es.filter((e) => !ids.includes(e.source) && !ids.includes(e.target)));

@@ -238,6 +238,7 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
     k === "ramp" ||
     k === "lookup" ||
     k === "constant" ||
+    k === "textTop" ||
     k === "movieIn" ||
     k === "videoDeviceIn" ||
     k === "transform" ||
@@ -252,6 +253,7 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
     k === "noiseCh" ||
     k === "lfo" ||
     k === "movieAudioIn" ||
+    k === "handsChop" ||
     isComposite;
 
   const hasChopIn = k === "noiseSop" || k === "transform";

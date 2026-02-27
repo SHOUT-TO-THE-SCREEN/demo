@@ -24,6 +24,7 @@ export type NodeKind =
   | "webcamIn"
   | "movieIn"
   | "videoDeviceIn"
+  | "textTop"
   // ─── SOP ────────────────────────────────────────────────────────────────
   | "sphereSop"
   | "gridSop"
@@ -31,7 +32,8 @@ export type NodeKind =
   // ─── CHOP (generators) ──────────────────────────────────────────────────
   | "noiseCh"
   | "lfo"
-  | "movieAudioIn";
+  | "movieAudioIn"
+  | "handsChop";
 
 export type RampStop = { id: string; t: number; color: string };
 
@@ -94,14 +96,16 @@ export type NodeParams =
   | { kind: "webcamIn"; deviceId: string | null }
   | { kind: "movieIn"; src: string; speed: number; loop: boolean }
   | { kind: "videoDeviceIn"; deviceId: string | null }
+  | { kind: "textTop"; text: string; fontSize: number; fontFamily: string; color: string; align: "left" | "center" | "right"; bold: boolean; italic: boolean; posX: number; posY: number }
   // ─── SOP ────────────────────────────────────────────────────────────────
-  | { kind: "sphereSop"; radius: number; rows: number; cols: number }
-  | { kind: "gridSop"; width: number; height: number; rows: number; cols: number }
-  | { kind: "noiseSop"; amplitude: number; frequency: number; speed: number; seed: number }
+  | { kind: "sphereSop"; radius: number; rows: number; cols: number; color: string; colorShadow: string }
+  | { kind: "gridSop"; width: number; height: number; rows: number; cols: number; color: string; colorShadow: string }
+  | { kind: "noiseSop"; amplitude: number; frequency: number; speed: number; seed: number; color: string; colorShadow: string }
   // ─── CHOP generators ────────────────────────────────────────────────────
   | { kind: "noiseCh"; seed: number; period: number; amplitude: number; numChannels: number; numSamples: number }
   | { kind: "lfo"; waveform: "sine" | "square" | "ramp" | "triangle"; frequency: number; amplitude: number; offset: number; numSamples: number }
-  | { kind: "movieAudioIn"; src: string; gain: number; numSamples: number; loop: boolean };
+  | { kind: "movieAudioIn"; src: string; gain: number; numSamples: number; loop: boolean }
+  | { kind: "handsChop"; mirror: boolean };
 
 export type ViewerMode = "fit" | "fill" | "1:1";
 
@@ -231,16 +235,18 @@ function defaultParams(kind: NodeKind): NodeParams {
   if (kind === "webcamIn") return { kind, deviceId: null };
   if (kind === "movieIn") return { kind, src: "", speed: 1, loop: true };
   if (kind === "videoDeviceIn") return { kind, deviceId: null };
+  if (kind === "textTop") return { kind, text: "Hello", fontSize: 48, fontFamily: "sans-serif", color: "#ffffff", align: "center", bold: false, italic: false, posX: 0.5, posY: 0.5 };
 
   // ─── SOP defaults ───────────────────────────────────────────────────────
-  if (kind === "sphereSop") return { kind, radius: 1.0, rows: 20, cols: 20 };
-  if (kind === "gridSop") return { kind, width: 2.0, height: 2.0, rows: 20, cols: 20 };
-  if (kind === "noiseSop") return { kind, amplitude: 0.3, frequency: 2.5, speed: 0.5, seed: 0 };
+  if (kind === "sphereSop") return { kind, radius: 1.0, rows: 20, cols: 20, color: "#dcdce1", colorShadow: "#14142a" };
+  if (kind === "gridSop") return { kind, width: 2.0, height: 2.0, rows: 20, cols: 20, color: "#b4dcca", colorShadow: "#0d2318" };
+  if (kind === "noiseSop") return { kind, amplitude: 0.3, frequency: 2.5, speed: 0.5, seed: 0, color: "#c8d7e6", colorShadow: "#0d1a2e" };
 
   // ─── CHOP generator defaults ────────────────────────────────────────────
   if (kind === "noiseCh") return { kind, seed: 0, period: 1, amplitude: 1, numChannels: 1, numSamples: 120 };
   if (kind === "lfo") return { kind, waveform: "sine", frequency: 1, amplitude: 1, offset: 0, numSamples: 120 };
   if (kind === "movieAudioIn") return { kind, src: "", gain: 1, numSamples: 256, loop: true };
+  if (kind === "handsChop") return { kind, mirror: true };
 
   // fallback
   return { kind: "output", exposure: 1 };

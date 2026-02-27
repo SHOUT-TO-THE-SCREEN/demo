@@ -119,3 +119,25 @@
   font-size: 12px;
   color: rgba(255, 255, 255, 0.55);
 }
+
+.paramPane__dropZone {
+  margin: 8px 0 4px;
+  padding: 14px 10px;
+  border-radius: 10px;
+  border: 1.5px dashed rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 120ms, background 120ms, color 120ms;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.paramPane__dropZone--active {
+  border-color: rgba(100, 180, 255, 0.8);
+  background: rgba(100, 160, 255, 0.12);
+  color: rgba(140, 200, 255, 0.95);
+}

@@ -11,6 +11,12 @@ import { renderSopPreview } from "./opsSop/renderSopPreview";
 import { bindMouseW, bindMouseWindow } from "./input/mouse";
 import type { NodeParams } from "../state/studioStore";
 
+// ─── Hex color → RGB tuple ────────────────────────────────────────────────────
+function hexToRgb(hex: string): [number, number, number] {
+  const n = parseInt(hex.replace("#", ""), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
 // ─── CHOP drive helper ────────────────────────────────────────────────────────
 // Reads values from a CHOP connected via the "chop" handle and overrides params.
 //
@@ -230,11 +236,18 @@ export function usePreviewRuntime() {
           ensureCanvasSize(canvas);
           const geom = evalSOP(nodeId);
           if (geom) {
-            const tint: [number, number, number] =
-              kind === "noiseSop" ? [200, 215, 230]
+            const sopParams = s.paramsById[nodeId];
+            const colorHex = (sopParams as any)?.color as string | undefined;
+            const colorShadowHex = (sopParams as any)?.colorShadow as string | undefined;
+            const tint: [number, number, number] = colorHex
+              ? hexToRgb(colorHex)
+              : kind === "noiseSop" ? [200, 215, 230]
               : kind === "gridSop" ? [180, 220, 200]
               : [220, 220, 225];
-            renderSopPreview(geom, canvas, now, tint);
+            const tintShadow: [number, number, number] = colorShadowHex
+              ? hexToRgb(colorShadowHex)
+              : [20, 20, 30];
+            renderSopPreview(geom, canvas, now, tint, tintShadow);
           }
           continue;
         }
@@ -278,11 +291,18 @@ export function usePreviewRuntime() {
             if (kind && SOP_KINDS.has(kind)) {
               const geom = evalSOP(targetNodeId);
               if (geom) {
-                const tint: [number, number, number] =
-                  kind === "noiseSop" ? [200, 215, 230]
+                const sopParams = s.paramsById[targetNodeId];
+                const colorHex = (sopParams as any)?.color as string | undefined;
+                const colorShadowHex = (sopParams as any)?.colorShadow as string | undefined;
+                const tint: [number, number, number] = colorHex
+                  ? hexToRgb(colorHex)
+                  : kind === "noiseSop" ? [200, 215, 230]
                   : kind === "gridSop" ? [180, 220, 200]
                   : [220, 220, 225];
-                renderSopPreview(geom, canvas, now, tint);
+                const tintShadow: [number, number, number] = colorShadowHex
+                  ? hexToRgb(colorShadowHex)
+                  : [20, 20, 30];
+                renderSopPreview(geom, canvas, now, tint, tintShadow);
               }
             } else {
               const outTop = evalTOP(targetNodeId, w, h);

@@ -36,6 +36,7 @@ export function renderSopPreview(
   canvas: HTMLCanvasElement,
   now: number,
   tint: [number, number, number] = [220, 220, 225],
+  tintShadow: [number, number, number] = [20, 20, 30],
 ): void {
   const w = canvas.width || 1;
   const h = canvas.height || 1;
@@ -149,12 +150,14 @@ export function renderSopPreview(
   // ─── Draw ────────────────────────────────────────────────────────────────
   g2d.clearRect(0, 0, w, h);
 
-  const [tr, tg, tb] = tint;
+  const [hr, hg, hb] = tint;
+  const [sr, sg, sb] = tintShadow;
 
   for (const face of faces) {
-    const r = (tr * face.shade) | 0;
-    const gv = (tg * face.shade) | 0;
-    const bv = (tb * face.shade) | 0;
+    const t = face.shade; // 0 (shadow) → 1 (highlight)
+    const r = (sr + (hr - sr) * t) | 0;
+    const gv = (sg + (hg - sg) * t) | 0;
+    const bv = (sb + (hb - sb) * t) | 0;
 
     g2d.beginPath();
     g2d.moveTo(face.ax, face.ay);

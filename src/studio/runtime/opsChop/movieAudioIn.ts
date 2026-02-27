@@ -12,7 +12,7 @@ type MovieAudioState = {
   ctx: AudioContext;
   analyser: AnalyserNode;
   el: HTMLVideoElement;
-  tmp: Float32Array;
+  tmp: Float32Array<ArrayBuffer>;
   src: string;
 };
 
@@ -50,7 +50,7 @@ function buildState(nodeId: string, src: string): MovieAudioState {
   el.play().catch(() => {});
   ctx.resume().catch(() => {});
 
-  const tmp = new Float32Array(analyser.fftSize);
+  const tmp = new Float32Array(analyser.fftSize) as Float32Array<ArrayBuffer>;
   const st: MovieAudioState = { ctx, analyser, el, tmp, src };
   stateMap.set(nodeId, st);
   return st;
@@ -69,6 +69,14 @@ function downsample(src: Float32Array, n: number): Float32Array {
     out[i] = src[i0] * (1 - t) + src[i1] * t;
   }
   return out;
+}
+
+export function cleanupMovieAudioIn(nodeId: string): void {
+  const st = stateMap.get(nodeId);
+  if (!st) return;
+  try { st.el.pause(); st.el.src = ""; st.el.remove(); } catch {}
+  try { st.ctx.close(); } catch {}
+  stateMap.delete(nodeId);
 }
 
 export function evalMovieAudioIn(nodeId: string, p: MovieAudioInParams): Chop {

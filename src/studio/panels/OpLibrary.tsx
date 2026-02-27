@@ -10,6 +10,7 @@ export default function OpLibrary() {
     () => [
       // TOP
       { kind: "noise", label: "noise", group: "TOP", enabled: true },
+      { kind: "textTop", label: "textTop", group: "TOP", enabled: true },
       { kind: "constant", label: "constant", group: "TOP", enabled: true },
       { kind: "ramp", label: "ramp", group: "TOP", enabled: true },
       { kind: "lookup", label: "lookup", group: "TOP", enabled: true },
@@ -34,7 +35,8 @@ export default function OpLibrary() {
       { kind: "noiseCh", label: "noiseCh", group: "CHOP", enabled: true },
       { kind: "lfo", label: "lfo", group: "CHOP", enabled: true },
       { kind: "movieAudioIn", label: "movieAudioIn", group: "CHOP", enabled: true },
-      
+      { kind: "handsChop", label: "handsChop", group: "CHOP", enabled: true },
+
       // SOP
       { kind: "sphereSop", label: "sphereSop", group: "SOP", enabled: true },
       { kind: "gridSop", label: "gridSop", group: "SOP", enabled: true },

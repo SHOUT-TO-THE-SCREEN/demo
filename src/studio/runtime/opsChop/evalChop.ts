@@ -8,6 +8,7 @@ import { evalNoiseCh } from "./noiseCh";
 import { evalLfo } from "./lfo";
 import { evalFftChop } from "./fft";
 import { evalMovieAudioIn } from "./movieAudioIn";
+import { evalHandsChopSync } from "./handsChop";
 const cache = new Map<string, Chop>();
 
 export function beginChopFrame() {
@@ -146,6 +147,14 @@ export function evalChop(nodeId: string, inputMap?: InputMap): Chop {
         gain: raw?.gain ?? 1,
         numSamples: raw?.numSamples ?? 256,
         loop: raw?.loop ?? true,
+      });
+      break;
+    }
+
+    case "handsChop": {
+      const raw = params?.kind === "handsChop" ? params : undefined;
+      out = evalHandsChopSync(nodeId, {
+        mirror: raw?.mirror ?? true,
       });
       break;
     }

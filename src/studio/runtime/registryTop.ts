@@ -12,6 +12,7 @@ import { evalHsvAdjust } from "./opsTop/hsvAdjust";
 import { evalBlur } from "./opsTop/blur";
 import { evalEdgeDetect } from "./opsTop/edgeDetect";
 import { evalComposite } from "./opsTop/composite";
+import { evalTextTop } from "./opsTop/textTop";
 
 export const TOP_REGISTRY: Partial<Record<NodeKind, TopOpEval>> = {
   noise: evalNoise,
@@ -31,4 +32,6 @@ export const TOP_REGISTRY: Partial<Record<NodeKind, TopOpEval>> = {
   multiply: evalComposite,
   screen: evalComposite,
   subtract: evalComposite,
+
+  textTop: evalTextTop,
 };
