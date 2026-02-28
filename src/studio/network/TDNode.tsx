@@ -226,7 +226,8 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
     k === "hsvAdjust" ||
     k === "blur" ||
     k === "edgeDetect" ||
-    k === "noiseSop";
+    k === "noiseSop" ||
+    k === "mergeSop";
 
   const hasOut =
     k === "audioIn" ||
@@ -250,6 +251,8 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
     k === "sphereSop" ||
     k === "gridSop" ||
     k === "noiseSop" ||
+    k === "torusSop" ||
+    k === "mergeSop" ||
     k === "noiseCh" ||
     k === "lfo" ||
     k === "movieAudioIn" ||
@@ -375,7 +378,26 @@ export default function TDNode(props: NodeProps<TDNodeData>) {
         </>
       )}
 
-      {hasIn1 && !isComposite && !isLookup && (
+      {k === "mergeSop" && (
+        <>
+          <Handle
+            id="in"
+            type="target"
+            position={Position.Left}
+            className="tdHandle tdHandle--in"
+            style={{ top: "38%" }}
+          />
+          <Handle
+            id="in1"
+            type="target"
+            position={Position.Left}
+            className="tdHandle tdHandle--in"
+            style={{ top: "72%" }}
+          />
+        </>
+      )}
+
+      {hasIn1 && !isComposite && !isLookup && k !== "mergeSop" && (
         <Handle
           id="in"
           type="target"

@@ -50,6 +50,6 @@ const KNOWN_KINDS = new Set([
   "hsvAdjust", "blur", "edgeDetect", "over", "add", "multiply",
   "screen", "subtract", "output", "textTop",
   "audioIn", "mouseIn", "math", "fft", "noiseCh", "lfo", "movieAudioIn", "handsChop",
-  "gridSop", "sphereSop", "noiseSop",
+  "gridSop", "sphereSop", "noiseSop", "torusSop", "mergeSop",
 ]);
 function isKnown(kind: string) { return KNOWN_KINDS.has(kind); }

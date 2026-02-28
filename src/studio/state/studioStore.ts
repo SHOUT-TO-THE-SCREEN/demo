@@ -29,6 +29,8 @@ export type NodeKind =
   | "sphereSop"
   | "gridSop"
   | "noiseSop"
+  | "torusSop"
+  | "mergeSop"
   // ─── CHOP (generators) ──────────────────────────────────────────────────
   | "noiseCh"
   | "lfo"
@@ -101,6 +103,8 @@ export type NodeParams =
   | { kind: "sphereSop"; radius: number; rows: number; cols: number; color: string; colorShadow: string }
   | { kind: "gridSop"; width: number; height: number; rows: number; cols: number; color: string; colorShadow: string }
   | { kind: "noiseSop"; amplitude: number; frequency: number; speed: number; seed: number; color: string; colorShadow: string }
+  | { kind: "torusSop"; radiusMajor: number; radiusMinor: number; rows: number; cols: number; color: string; colorShadow: string }
+  | { kind: "mergeSop"; color: string; colorShadow: string }
   // ─── CHOP generators ────────────────────────────────────────────────────
   | { kind: "noiseCh"; seed: number; period: number; amplitude: number; numChannels: number; numSamples: number }
   | { kind: "lfo"; waveform: "sine" | "square" | "ramp" | "triangle"; frequency: number; amplitude: number; offset: number; numSamples: number }
@@ -241,6 +245,8 @@ function defaultParams(kind: NodeKind): NodeParams {
   if (kind === "sphereSop") return { kind, radius: 1.0, rows: 20, cols: 20, color: "#dcdce1", colorShadow: "#14142a" };
   if (kind === "gridSop") return { kind, width: 2.0, height: 2.0, rows: 20, cols: 20, color: "#b4dcca", colorShadow: "#0d2318" };
   if (kind === "noiseSop") return { kind, amplitude: 0.3, frequency: 2.5, speed: 0.5, seed: 0, color: "#c8d7e6", colorShadow: "#0d1a2e" };
+  if (kind === "torusSop") return { kind, radiusMajor: 1.0, radiusMinor: 0.35, rows: 24, cols: 24, color: "#e6d0c8", colorShadow: "#1a0d0a" };
+  if (kind === "mergeSop") return { kind, color: "#dcdce1", colorShadow: "#14142a" };
 
   // ─── CHOP generator defaults ────────────────────────────────────────────
   if (kind === "noiseCh") return { kind, seed: 0, period: 1, amplitude: 1, numChannels: 1, numSamples: 120 };

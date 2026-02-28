@@ -38,6 +38,8 @@ const OPS: OpDef[] = [
   { kind: "sphereSop", label: "Sphere", group: "SOP", keywords: ["geometry", "mesh", "3d"] },
   { kind: "gridSop", label: "Grid", group: "SOP", keywords: ["plane", "grid", "mesh", "terrain", "wave", "3d"] },
   { kind: "noiseSop", label: "Noise", group: "SOP", keywords: ["deform", "displace", "animate", "3d"] },
+  { kind: "torusSop", label: "Torus", group: "SOP", keywords: ["donut", "ring", "torus", "3d"] },
+  { kind: "mergeSop", label: "Merge", group: "SOP", keywords: ["combine", "join", "merge", "3d"] },
 
   // OUT
   { kind: "output", label: "Output", group: "OUT", keywords: ["display"] },

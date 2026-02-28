@@ -120,5 +120,67 @@ export function SopParams({ kind, id, params, setParam }: Props) {
     );
   }
 
+  // ── Torus SOP ────────────────────────────────────────────────────────────
+  if (kind === "torusSop") {
+    const p = params?.kind === "torusSop"
+      ? params
+      : { kind: "torusSop" as const, radiusMajor: 1.0, radiusMinor: 0.35, rows: 24, cols: 24, color: "#e6d0c8", colorShadow: "#1a0d0a" };
+    return (
+      <aside className="paramPane">
+        <div className="paramPane__title">Torus SOP</div>
+        <Row label="Major R">
+          <input type="range" min={0.1} max={3} step={0.01} value={p.radiusMajor}
+            onChange={(e) => setParam(id, "torusSop", { radiusMajor: Number(e.target.value) })} />
+          <span className="paramPane__value">{p.radiusMajor.toFixed(2)}</span>
+        </Row>
+        <Row label="Minor R">
+          <input type="range" min={0.05} max={1.5} step={0.01} value={p.radiusMinor}
+            onChange={(e) => setParam(id, "torusSop", { radiusMinor: Number(e.target.value) })} />
+          <span className="paramPane__value">{p.radiusMinor.toFixed(2)}</span>
+        </Row>
+        <Row label="Rows">
+          <input type="range" min={3} max={60} step={1} value={p.rows}
+            onChange={(e) => setParam(id, "torusSop", { rows: Number(e.target.value) })} />
+          <span className="paramPane__value">{p.rows}</span>
+        </Row>
+        <Row label="Cols">
+          <input type="range" min={3} max={60} step={1} value={p.cols}
+            onChange={(e) => setParam(id, "torusSop", { cols: Number(e.target.value) })} />
+          <span className="paramPane__value">{p.cols}</span>
+        </Row>
+        <Row label="Highlight">
+          <input type="color" value={p.color}
+            onChange={(e) => setParam(id, "torusSop", { color: e.target.value })} />
+        </Row>
+        <Row label="Shadow">
+          <input type="color" value={p.colorShadow}
+            onChange={(e) => setParam(id, "torusSop", { colorShadow: e.target.value })} />
+        </Row>
+        <div className="paramPane__hint">Major R: 링 반지름 · Minor R: 튜브 두께</div>
+      </aside>
+    );
+  }
+
+  // ── Merge SOP ────────────────────────────────────────────────────────────
+  if (kind === "mergeSop") {
+    const p = params?.kind === "mergeSop"
+      ? params
+      : { kind: "mergeSop" as const, color: "#dcdce1", colorShadow: "#14142a" };
+    return (
+      <aside className="paramPane">
+        <div className="paramPane__title">Merge SOP</div>
+        <Row label="Highlight">
+          <input type="color" value={p.color}
+            onChange={(e) => setParam(id, "mergeSop", { color: e.target.value })} />
+        </Row>
+        <Row label="Shadow">
+          <input type="color" value={p.colorShadow}
+            onChange={(e) => setParam(id, "mergeSop", { colorShadow: e.target.value })} />
+        </Row>
+        <div className="paramPane__hint">in (위쪽 핸들) + in1 (아래쪽 핸들) → 두 SOP 합치기</div>
+      </aside>
+    );
+  }
+
   return null;
 }

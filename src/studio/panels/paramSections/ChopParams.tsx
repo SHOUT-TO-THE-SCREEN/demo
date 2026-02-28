@@ -82,35 +82,35 @@ export function ChopParams({ kind, id, params, setParam }: Props) {
         {p.tab === "multadd" ? (
           <>
             <Row label="Pre-Add">
-              <input className="paramPane__input" type="number" value={p.preAdd}
-                onChange={(e) => setParam(id, "math", { preAdd: Number(e.target.value) || 0 })} />
+              <input className="paramPane__input" type="number" step="any" value={p.preAdd}
+                onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) setParam(id, "math", { preAdd: v }); }} />
             </Row>
             <Row label="Multiply">
-              <input className="paramPane__input" type="number" value={p.multiply}
-                onChange={(e) => setParam(id, "math", { multiply: Number(e.target.value) || 1 })} />
+              <input className="paramPane__input" type="number" step="any" value={p.multiply}
+                onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) setParam(id, "math", { multiply: v }); }} />
             </Row>
             <Row label="Post-Add">
-              <input className="paramPane__input" type="number" value={p.postAdd}
-                onChange={(e) => setParam(id, "math", { postAdd: Number(e.target.value) || 0 })} />
+              <input className="paramPane__input" type="number" step="any" value={p.postAdd}
+                onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) setParam(id, "math", { postAdd: v }); }} />
             </Row>
           </>
         ) : (
           <>
             <Row label="From Low">
-              <input className="paramPane__input" type="number" value={p.fromLow}
-                onChange={(e) => setParam(id, "math", { fromLow: Number(e.target.value) || 0 })} />
+              <input className="paramPane__input" type="number" step="any" value={p.fromLow}
+                onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) setParam(id, "math", { fromLow: v }); }} />
             </Row>
             <Row label="From High">
-              <input className="paramPane__input" type="number" value={p.fromHigh}
-                onChange={(e) => setParam(id, "math", { fromHigh: Number(e.target.value) || 1 })} />
+              <input className="paramPane__input" type="number" step="any" value={p.fromHigh}
+                onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) setParam(id, "math", { fromHigh: v }); }} />
             </Row>
             <Row label="To Low">
-              <input className="paramPane__input" type="number" value={p.toLow}
-                onChange={(e) => setParam(id, "math", { toLow: Number(e.target.value) || 0 })} />
+              <input className="paramPane__input" type="number" step="any" value={p.toLow}
+                onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) setParam(id, "math", { toLow: v }); }} />
             </Row>
             <Row label="To High">
-              <input className="paramPane__input" type="number" value={p.toHigh}
-                onChange={(e) => setParam(id, "math", { toHigh: Number(e.target.value) || 1 })} />
+              <input className="paramPane__input" type="number" step="any" value={p.toHigh}
+                onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) setParam(id, "math", { toHigh: v }); }} />
             </Row>
             <Row label="Clamp">
               <input type="checkbox" checked={p.clamp}
@@ -248,11 +248,14 @@ export function ChopParams({ kind, id, params, setParam }: Props) {
             onChange={(e) => setParam(id, "handsChop", { mirror: e.target.checked })} />
         </Row>
         <div className="paramPane__hint" style={{ paddingTop: 12, color: "rgba(255,255,255,0.45)", fontSize: 10, lineHeight: 1.6 }}>
-          ch0/1 · wrist x/y<br />
-          ch2/3 · index tip x/y<br />
-          ch4/5 · thumb tip x/y<br />
-          ch6 · pinch distance<br />
-          ch7 · hand present
+          ch0 · 핀치 (손 펴면 0, 집으면 1) → amplitude<br />
+          ch1 · 검지 높이 (올리면 1) → frequency<br />
+          ch2 · 손목 기울기 (수직=0.5, 오→1, 왼→0) → speed<br />
+          ch3/4 · 손목 x/y · ch5/6 · 검지끝 x/y<br />
+          ch7/8 · 엄지끝 x/y · ch9 · 핀치 거리 (raw)<br />
+          ch10 · 손 감지 (0/1)<br />
+          ch11 · 손 벌림 (주먹=0, 완전히 펼침=1)<br />
+          ch12 · 손가락 개수 (주먹=0, 5개=1.0)
         </div>
       </aside>
     );

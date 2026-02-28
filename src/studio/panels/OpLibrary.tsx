@@ -41,6 +41,8 @@ export default function OpLibrary() {
       { kind: "sphereSop", label: "sphereSop", group: "SOP", enabled: true },
       { kind: "gridSop", label: "gridSop", group: "SOP", enabled: true },
       { kind: "noiseSop", label: "noiseSop", group: "SOP", enabled: true },
+      { kind: "torusSop", label: "torusSop", group: "SOP", enabled: true },
+      { kind: "mergeSop", label: "mergeSop", group: "SOP", enabled: true },
 
       // OUT
       { kind: "output", label: "output", group: "OUT", enabled: true },
